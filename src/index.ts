@@ -1,3 +1,3 @@
-import { Add } from './Add.js';
+import { Constant, Number } from './snarkyjs-math';
 
-export { Add };
+export { Constant, Number };
