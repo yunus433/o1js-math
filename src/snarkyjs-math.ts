@@ -22,7 +22,6 @@ const
   PRECISION_LOG = 9,
   PRECISION_EXACT = 1e17,
   PRECISION_LOG_EXACT = 17,
-  TAYLOR_SERIE_TERM_PRECISION = 19,
   LN_2 = 0.69314718055995,
   LN_10 = 2.302585093
 ;
@@ -648,14 +647,15 @@ export class CircuitNumber extends Struct({
 };
 
 export class CircuitMath {
-  private static powTwo(power: CircuitNumber): CircuitNumber {
-    const OPERATION_COUNT = 60;
+  private static intPow(base: CircuitNumber, power: CircuitNumber): CircuitNumber {
+    const OPERATION_COUNT = 64;
+
     let answer = CircuitNumber.from(1);
 
     for (let i = 1; i < OPERATION_COUNT; i++)
       answer = answer.mul(Circuit.if(
         power.gte(CircuitNumber.from(i)),
-        CircuitNumber.from(2),
+        base,
         CircuitNumber.from(1)
       ));
 
@@ -667,7 +667,25 @@ export class CircuitMath {
     return CircuitNumber.from(number.toBits().map(each => each.toBoolean()).lastIndexOf(true))
   };
 
+  private static ePow(number: CircuitNumber): CircuitNumber {
+    const TAYLOR_SERIE_TERM_PRECISION = 15;
+
+    let answer = CircuitNumber.from(1);
+    let xPow = number;
+    let factorial = CircuitNumber.from(1);
+
+    for (let i = 1; i < TAYLOR_SERIE_TERM_PRECISION; i ++) {
+      answer = answer.add(xPow.div(factorial));
+      xPow = xPow.mul(number);
+      factorial = factorial.mul(CircuitNumber.from(i + 1));
+    }
+
+    return answer;
+  };
+
   private static _ln(number: CircuitNumber): CircuitNumber {
+    const TAYLOR_SERIE_TERM_PRECISION = 38;
+
     number.gt(CircuitNumber.from(0)).assertEquals(Bool(true));
     number.lte(CircuitNumber.from(2)).assertEquals(Bool(true));
 
@@ -676,7 +694,7 @@ export class CircuitMath {
     let signPow = CircuitNumber.from(1);
     let answer = CircuitNumber.from(0);
 
-    for (let i = 1; i <= 2 * TAYLOR_SERIE_TERM_PRECISION; i++) {
+    for (let i = 1; i <= TAYLOR_SERIE_TERM_PRECISION; i++) {
       answer = answer.add(signPow.mul(xPow.div(CircuitNumber.from(i))));
       xPow = xPow.mul(x);
       signPow = signPow.mul(CircuitNumber.from(-1));
@@ -685,10 +703,29 @@ export class CircuitMath {
     return answer;
   };
 
+  static pow(base: CircuitNumber, power: CircuitNumber): CircuitNumber {
+    const intPow = power.abs().parseInt();
+    const _answer = CircuitMath.intPow(base, intPow).mul(CircuitMath.ePow(power.abs().sub(intPow).mul(CircuitMath.ln(base))));
+    
+    return Circuit.if(power.sign.equals(Field(-1)), _answer.inv(), _answer);
+  };
+
+  static sqrt(number: CircuitNumber): CircuitNumber {
+    return CircuitMath.pow(number, CircuitNumber.from(0.5));
+  };
+
+  static cbrt(number: CircuitNumber): CircuitNumber {
+    return CircuitMath.pow(number, CircuitNumber.from(0.333333333));
+  };
+
+  static rootBase(number: CircuitNumber, base: CircuitNumber): CircuitNumber {
+    return CircuitMath.pow(number, base.inv());
+  };
+
   static ln(number: CircuitNumber): CircuitNumber {
     number.gt(CircuitNumber.from(0)).assertEquals(Bool(true));
     const power = CircuitMath.logTwo(number.ceil().toField());
-    const reminder = CircuitNumberExact.fromCircuitNumber(CircuitMath._ln(number.div(CircuitMath.powTwo(power))));
+    const reminder = CircuitNumberExact.fromCircuitNumber(CircuitMath._ln(number.div(CircuitMath.intPow(CircuitNumber.from(2), power))));
 
     return CircuitNumberExact.from(LN_2).mul(CircuitNumberExact.fromCircuitNumber(power)).add(reminder).toCircuitNumber();
   };
@@ -706,6 +743,8 @@ export class CircuitMath {
   };
 
   static sin(number: CircuitNumber): CircuitNumber {
+    const TAYLOR_SERIE_TERM_PRECISION = 19;
+
     let answer = CircuitNumber.from(0);
     let xPow = number;
     let signPow = CircuitNumber.from(1);
@@ -723,6 +762,8 @@ export class CircuitMath {
   };
 
   static cos(number: CircuitNumber): CircuitNumber {
+    const TAYLOR_SERIE_TERM_PRECISION = 19;
+
     let answer = CircuitNumber.from(1);
     let xPow = number.mul(number);
     let signPow = CircuitNumber.from(-1);
@@ -744,6 +785,8 @@ export class CircuitMath {
   };
 
   static sinh(number: CircuitNumber): CircuitNumber {
+    const TAYLOR_SERIE_TERM_PRECISION = 19;
+
     let answer = CircuitNumber.from(0);
     let xPow = number;
     let factorial = CircuitNumber.from(1);
@@ -759,6 +802,8 @@ export class CircuitMath {
   };
 
   static cosh(number: CircuitNumber): CircuitNumber {
+    const TAYLOR_SERIE_TERM_PRECISION = 19;
+
     let answer = CircuitNumber.from(1);
     let xPow = number.mul(number);
     let factorial = CircuitNumber.from(2);

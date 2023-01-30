@@ -80,6 +80,8 @@ describe('Test', () => {
     // console.log(CircuitMath.sinh(number1).toNumber());
     // console.log(CircuitMath.tanh(number2).toNumber());
 
+    // console.log(CircuitMath.rootBase(CircuitNumber.from(13.45), CircuitNumber.from(4.3)).toNumber());
+
     expect(1).toEqual(1);
   });
 

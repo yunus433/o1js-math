@@ -1,4 +1,4 @@
-# Mina zkApp: Mina Math
+# Mina zkApp: snarkyJS Math
 
 This template uses TypeScript.
 
