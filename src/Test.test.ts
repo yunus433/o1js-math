@@ -12,6 +12,7 @@ import {
   UInt64,
 } from 'snarkyjs';
 import {
+  CircuitConstant,
   CircuitMath,
   CircuitNumber
 } from './snarkyjs-math';
@@ -54,7 +55,7 @@ describe('Test', () => {
     // const number2 = CircuitNumber.from(3.9912344);
     // const number3 = CircuitNumber.from(0.03);
     // const number4 = CircuitNumber.from(787);
-    const number1 = CircuitNumber.from(5.47);
+    const number1 = CircuitNumber.from(-12.47);
     const number2 = CircuitNumber.from(1.3);
 
     // (5 + 0.128) * (3 + 0.991) = (5 * 3) + (5 * 0.991) + (3 * 0.128) + (0.128 + 0.991)
@@ -81,6 +82,13 @@ describe('Test', () => {
     // console.log(CircuitMath.tanh(number2).toNumber());
 
     // console.log(CircuitMath.rootBase(CircuitNumber.from(13.45), CircuitNumber.from(4.3)).toNumber());
+
+    // console.log(CircuitMath.arctan(CircuitNumber.from(0.2)).toNumber());
+    
+    // console.log(CircuitNumber.from(3.4).round().toNumber());
+    // console.log(CircuitNumber.from(3.6).round().toNumber());
+
+    console.log(CircuitMath.cos(number1).valueOf());
 
     expect(1).toEqual(1);
   });
