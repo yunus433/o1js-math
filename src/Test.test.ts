@@ -14,7 +14,8 @@ import {
 import {
   CircuitConstant,
   CircuitMath,
-  CircuitNumber
+  CircuitNumber,
+  CircuitNumberExact
 } from './snarkyjs-math';
 
 import {
@@ -55,7 +56,7 @@ describe('Test', () => {
     // const number2 = CircuitNumber.from(3.9912344);
     // const number3 = CircuitNumber.from(0.03);
     // const number4 = CircuitNumber.from(787);
-    const number1 = CircuitNumber.from(-12.47);
+    const number1 = CircuitNumber.from(5.47);
     const number2 = CircuitNumber.from(1.3);
 
     // (5 + 0.128) * (3 + 0.991) = (5 * 3) + (5 * 0.991) + (3 * 0.128) + (0.128 + 0.991)
@@ -76,7 +77,9 @@ describe('Test', () => {
 
     // console.log(CircuitMath.logBase(number1, number2).toNumber());
     // console.log(CircuitMath.log10(CircuitNumber.from(10)).toNumber());
-    // console.log(CircuitMath.tan(CircuitNumber.from(2.3)).toNumber());
+    // console.log(CircuitMath.cos(CircuitNumber.from(4.5)).toNumber());
+    // console.log(CircuitNumberExact.from(3.20000001).lte(CircuitNumberExact.from(3.20000001)).toBoolean());
+    // console.log(CircuitMath.tan(CircuitNumber.from(1.4)).toNumber());
 
     // console.log(CircuitMath.sinh(number1).toNumber());
     // console.log(CircuitMath.tanh(number2).toNumber());
@@ -88,7 +91,25 @@ describe('Test', () => {
     // console.log(CircuitNumber.from(3.4).round().toNumber());
     // console.log(CircuitNumber.from(3.6).round().toNumber());
 
-    console.log(CircuitMath.cos(number1).valueOf());
+    // console.log(CircuitMath.cos(number1).valueOf());
+
+    // console.log(CircuitNumber.from(4.0).floor().toNumber());
+    // console.log(CircuitNumber.from(4.9).ceil().toNumber());
+    // console.log(CircuitNumber.from(4.9).trunc().toNumber());
+
+    // console.log(CircuitNumber.from(-4.0).floor().toNumber());
+    // console.log(CircuitNumber.from(-4.9).ceil().toNumber());
+    // console.log(CircuitNumber.from(-4.9).trunc().toNumber());
+
+    // console.log(CircuitNumber.from(5).mod(CircuitNumber.from(4)).toNumber());
+    // console.log(CircuitNumber.from(-5).mod(CircuitNumber.from(4)).toNumber());
+    // console.log(CircuitNumber.from(5).mod(CircuitNumber.from(-4)).toNumber());
+    // console.log(CircuitNumber.from(-5).mod(CircuitNumber.from(-4)).toNumber());
+
+    // console.log(CircuitNumber.from(5.2).mod(CircuitNumber.from(4.1)).toNumber());
+    // console.log(CircuitNumber.from(-5.2).mod(CircuitNumber.from(4.1)).toNumber());
+    // console.log(CircuitNumber.from(5.2).mod(CircuitNumber.from(-4.1)).toNumber());
+    // console.log(CircuitNumber.from(-5.2).mod(CircuitNumber.from(-4.1)).toNumber());
 
     expect(1).toEqual(1);
   });
