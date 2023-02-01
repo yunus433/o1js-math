@@ -75,9 +75,11 @@ describe('Test', () => {
     // console.log(CircuitNumber.from(924269.181808896).valueOf());
     // console.log(CircuitNumber.from(924269.181808896).equals(CircuitNumber.from(924269.181808896).add(CircuitNumber.from(0))).toBoolean());
 
+    // console.log(CircuitMath.tan(CircuitNumber.from(43.2)).toNumber());
+
     // console.log(CircuitMath.logBase(number1, number2).toNumber());
     // console.log(CircuitMath.log10(CircuitNumber.from(10)).toNumber());
-    // console.log(CircuitMath.cos(CircuitNumber.from(4.5)).toNumber());
+    // console.log(CircuitMath.cos(CircuitNumber.from(2 * 3.14)).toNumber());
     // console.log(CircuitNumberExact.from(3.20000001).lte(CircuitNumberExact.from(3.20000001)).toBoolean());
     // console.log(CircuitMath.tan(CircuitNumber.from(1.4)).toNumber());
 

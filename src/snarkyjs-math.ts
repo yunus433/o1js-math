@@ -854,20 +854,49 @@ export class CircuitMath {
 
   // Trigonometric & Hyperbolic Functions
 
-  static sin(_number: CircuitNumber): CircuitNumber {
+  static sin(_angle: CircuitNumber): CircuitNumber {
     const TAYLOR_SERIE_TERM_PRECISION = 17;
 
-    const number = _number.normalizeRadians();
+    const angle = _angle.normalizeRadians();
+
+    const {
+      reducedAngle,
+      sign
+    } = Circuit.if(
+      angle.lt(CircuitNumber.from(PI / 2)),
+      {
+        reducedAngle: angle,
+        sign: Field(1)
+      },
+      Circuit.if(
+        angle.lt(CircuitNumber.from(PI)),
+        {
+          reducedAngle: CircuitNumber.from(PI).sub(angle),
+          sign: Field(1)
+        },
+        Circuit.if(
+          angle.lt(CircuitNumber.from(3 * PI / 2)),
+          {
+            reducedAngle: angle.sub(CircuitNumber.from(PI)).neg(),
+            sign: Field(-1)
+          },
+          {
+            reducedAngle: CircuitNumber.from(2 * PI).sub(angle),
+            sign: Field(-1)
+          }
+        )
+      )
+    );
 
     let answer = CircuitNumber.from(0);
-    let xPow = number;
+    let xPow = reducedAngle;
     let signPow = CircuitNumber.from(1);
     let factorial = CircuitNumber.from(1);
 
     for (let i = 1; i < TAYLOR_SERIE_TERM_PRECISION; i += 2) {
       answer = answer.add(signPow.mul(xPow.div(factorial)));
       signPow = signPow.neg();
-      xPow = xPow.mul(number).mul(number);
+      xPow = xPow.mul(reducedAngle).mul(reducedAngle);
       factorial = factorial.mul(CircuitNumber.from(i + 1));
       factorial = factorial.mul(CircuitNumber.from(i + 2));
     }
@@ -875,23 +904,53 @@ export class CircuitMath {
     return answer;
   };
 
-  static cos(_number: CircuitNumber): CircuitNumber {
+  static cos(_angle: CircuitNumber): CircuitNumber {
     const TAYLOR_SERIE_TERM_PRECISION = 19;
 
-    const number = _number.normalizeRadians();
+    const angle = _angle.normalizeRadians();
+    const {
+      reducedAngle,
+      sign
+    } = Circuit.if(
+      angle.lt(CircuitNumber.from(PI / 2)),
+      {
+        reducedAngle: angle,
+        sign: Field(1)
+      },
+      Circuit.if(
+        angle.lt(CircuitNumber.from(PI)),
+        {
+          reducedAngle: CircuitNumber.from(PI).sub(angle),
+          sign: Field(-1)
+        },
+        Circuit.if(
+          angle.lt(CircuitNumber.from(3 * PI / 2)),
+          {
+            reducedAngle: angle.sub(CircuitNumber.from(PI)).neg(),
+            sign: Field(-1)
+          },
+          {
+            reducedAngle: CircuitNumber.from(2 * PI).sub(angle),
+            sign: Field(1)
+          }
+        )
+      )
+    );
 
     let answer = CircuitNumber.from(1);
-    let xPow = number.mul(number);
+    let xPow = reducedAngle.mul(reducedAngle);
     let signPow = CircuitNumber.from(-1);
     let factorial = CircuitNumber.from(2);
 
     for (let i = 2; i < TAYLOR_SERIE_TERM_PRECISION; i += 2) {
       answer = answer.add(signPow.mul(xPow.div(factorial)));
       signPow = signPow.neg();
-      xPow = xPow.mul(number).mul(number);
+      xPow = xPow.mul(reducedAngle).mul(reducedAngle);
       factorial = factorial.mul(CircuitNumber.from(i + 1));
       factorial = factorial.mul(CircuitNumber.from(i + 2));
     }
+
+    answer.sign = sign;
 
     return answer;
   };
