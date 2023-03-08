@@ -1,3 +1,20 @@
+// private static formatFieldToPrecisionDigits(_number: Field): Field {
+//   const number = _number.seal();
+//   let answer = Circuit.witness(
+//     Field,
+//     () => {
+//       const digitCount = Math.trunc(Math.log10(Number(number.toBigInt()))) + 1;
+//       if (PRECISION_EXACT_LOG > digitCount)
+//         return new Field( number.toBigInt() * BigInt(Number(`1e${PRECISION_EXACT_LOG - digitCount}`)) )
+//       else
+//         return number;
+//     }
+//   );
+//   answer.rangeCheckHelper(CircuitNumberExact.NUM_BITS).assertEquals(answer);
+
+//   return answer;
+// };
+
 // const
 //   MAX_PRECISION = 1e18,
 //   MAX_NUMBER = 18_446_744_073_709_551_615, // Max UInt64. For the maximum number, precision is always 0
