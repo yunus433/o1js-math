@@ -10,7 +10,7 @@ import {
 await isReady;
 
 // SUPPORTED: -1e18 < X < 1e18.
-// DECIMAL PRECISION: 1e9
+// DECIMAL PRECISION: 1e8
 
 const
   PI = 3.1415926535897932,
@@ -1207,13 +1207,13 @@ export class CircuitMath {
 
   // Number Functions
 
-  static gcd(a: CircuitNumber, b: CircuitNumber): CircuitNumber {
-    return a;
-  };
+  // static gcd(a: CircuitNumber, b: CircuitNumber): CircuitNumber {
+  //   return a;
+  // };
 
-  static lcm(a: CircuitNumber, b: CircuitNumber): CircuitNumber {
-    return a.mul(b).div(CircuitMath.gcd(a, b));
-  };
+  // static lcm(a: CircuitNumber, b: CircuitNumber): CircuitNumber {
+  //   return a.mul(b).div(CircuitMath.gcd(a, b));
+  // };
 
   // Logarithmic Functions
 
@@ -1555,99 +1555,165 @@ export class CircuitMath {
     return CircuitMath.cos(number).div(CircuitMath.sin(number));
   };
 
-  static sinh(number: CircuitNumber): CircuitNumber {
+  private static sinhExact(_number: CircuitNumber): CircuitNumberExact {
     const TAYLOR_SERIE_TERM_PRECISION = 19;
 
-    let answer = CircuitNumber.from(0);
+    const number = CircuitNumberExact.fromCircuitNumber(_number);
+
+    let answer = CircuitNumberExact.fromString('0');
     let xPow = number;
-    let factorial = CircuitNumber.from(1);
+    let factorial = CircuitNumberExact.fromString('1');
 
     for (let i = 1; i < TAYLOR_SERIE_TERM_PRECISION; i += 2) {
       answer = answer.add(xPow.div(factorial));
       xPow = xPow.mul(number).mul(number);
-      factorial = factorial.mul(CircuitNumber.from(i + 1));
-      factorial = factorial.mul(CircuitNumber.from(i + 2));
+      factorial = factorial.mul(CircuitNumberExact.fromString((i + 1).toString()));
+      factorial = factorial.mul(CircuitNumberExact.fromString((i + 2).toString()));
     }
 
     return answer;
   };
 
-  static cosh(number: CircuitNumber): CircuitNumber {
+  private static coshExact(_number: CircuitNumber): CircuitNumberExact {
     const TAYLOR_SERIE_TERM_PRECISION = 19;
 
-    let answer = CircuitNumber.from(1);
+    const number = CircuitNumberExact.fromCircuitNumber(_number);
+
+    let answer = CircuitNumberExact.fromString('1');
     let xPow = number.mul(number);
-    let factorial = CircuitNumber.from(2);
+    let factorial = CircuitNumberExact.fromString('2');
 
     for (let i = 2; i < TAYLOR_SERIE_TERM_PRECISION; i += 2) {
       answer = answer.add(xPow.div(factorial));
       xPow = xPow.mul(number).mul(number);
-      factorial = factorial.mul(CircuitNumber.from(i + 1));
-      factorial = factorial.mul(CircuitNumber.from(i + 2));
+      factorial = factorial.mul(CircuitNumberExact.fromString((i + 1).toString()));
+      factorial = factorial.mul(CircuitNumberExact.fromString((i + 2).toString()));
     }
 
     return answer;
   };
 
+  static sinh(_number: CircuitNumber): CircuitNumber {
+    const TAYLOR_SERIE_TERM_PRECISION = 19;
+
+    const number = CircuitNumberExact.fromCircuitNumber(_number);
+
+    let answer = CircuitNumberExact.fromString('0');
+    let xPow = number;
+    let factorial = CircuitNumberExact.fromString('1');
+
+    for (let i = 1; i < TAYLOR_SERIE_TERM_PRECISION; i += 2) {
+      answer = answer.add(xPow.div(factorial));
+      xPow = xPow.mul(number).mul(number);
+      factorial = factorial.mul(CircuitNumberExact.fromString((i + 1).toString()));
+      factorial = factorial.mul(CircuitNumberExact.fromString((i + 2).toString()));
+    }
+
+    return answer.toCircuitNumber();
+  };
+
+  static cosh(_number: CircuitNumber): CircuitNumber {
+    const TAYLOR_SERIE_TERM_PRECISION = 19;
+
+    const number = CircuitNumberExact.fromCircuitNumber(_number);
+
+    let answer = CircuitNumberExact.fromString('1');
+    let xPow = number.mul(number);
+    let factorial = CircuitNumberExact.fromString('2');
+
+    for (let i = 2; i < TAYLOR_SERIE_TERM_PRECISION; i += 2) {
+      answer = answer.add(xPow.div(factorial));
+      xPow = xPow.mul(number).mul(number);
+      factorial = factorial.mul(CircuitNumberExact.fromString((i + 1).toString()));
+      factorial = factorial.mul(CircuitNumberExact.fromString((i + 2).toString()));
+    }
+
+    return answer.toCircuitNumber();
+  };
+
   static tanh(number: CircuitNumber): CircuitNumber {
-    return CircuitMath.sinh(number).div(CircuitMath.cosh(number));
+    return CircuitMath.sinhExact(number).div(CircuitMath.coshExact(number)).toCircuitNumber();
   };
 
   // Inverse Trigonometric & Hyperbolic Functions
 
-  static arcsin(number: CircuitNumber): CircuitNumber {
+  private static arcsinExact(number: CircuitNumberExact): CircuitNumberExact {
     const TAYLOR_SERIE_TERM_PRECISION = 9;
 
-    let answer = CircuitNumber.from(0);
+    let answer = CircuitNumberExact.fromString('0');
     let xPow = number;
-    let signPow = CircuitNumber.from(1);
-    let factorial = CircuitNumber.from(1);
-    let doubledFactorial = CircuitNumber.from(1);
-    let fourPow = CircuitNumber.from(1);
+    let signPow = CircuitNumberExact.fromString('1');
+    let factorial = CircuitNumberExact.fromString('1');
+    let doubledFactorial = CircuitNumberExact.fromString('1');
+    let fourPow = CircuitNumberExact.fromString('1');
 
     for (let i = 1; i < TAYLOR_SERIE_TERM_PRECISION; i ++) {
-      answer = answer.add(xPow.mul(doubledFactorial).div(factorial).div(fourPow).div(CircuitNumber.from(2 * i + 1)));
+      answer = answer.add(xPow.mul(doubledFactorial).div(factorial).div(fourPow).div(CircuitNumberExact.fromString((2 * i + 1).toString())));
       signPow = signPow.neg();
       xPow = xPow.mul(number).mul(number);
-      factorial = factorial.mul(CircuitNumber.from(i + 1));
-      factorial = factorial.mul(CircuitNumber.from(i + 2));
-      // doubledFactorial = doubledFactorial.mul()
+      factorial = factorial.mul(CircuitNumberExact.fromString((i + 1).toString()));
+      factorial = factorial.mul(CircuitNumberExact.fromString((i + 2).toString()));
     }
 
     return answer;
+  };
+
+  static arcsin(_number: CircuitNumber): CircuitNumber {
+    const TAYLOR_SERIE_TERM_PRECISION = 9;
+
+    const number = CircuitNumberExact.fromCircuitNumber(_number);
+
+    let answer = CircuitNumberExact.fromString('0');
+    let xPow = number;
+    let signPow = CircuitNumberExact.fromString('1');
+    let factorial = CircuitNumberExact.fromString('1');
+    let doubledFactorial = CircuitNumberExact.fromString('1');
+    let fourPow = CircuitNumberExact.fromString('1');
+
+    for (let i = 1; i < TAYLOR_SERIE_TERM_PRECISION; i ++) {
+      answer = answer.add(xPow.mul(doubledFactorial).div(factorial).div(fourPow).div(CircuitNumberExact.fromString((2 * i + 1).toString())));
+      signPow = signPow.neg();
+      xPow = xPow.mul(number).mul(number);
+      factorial = factorial.mul(CircuitNumberExact.fromString((i + 1).toString()));
+      factorial = factorial.mul(CircuitNumberExact.fromString((i + 2).toString()));
+    }
+
+    return answer.toCircuitNumber();
   };
 
   static arccos(number: CircuitNumber): CircuitNumber {
-    return CircuitNumber.from(PI).mul(CircuitNumber.from(2)).sub(CircuitMath.arcsin(number));
+    return CircuitNumberExact.fromString(PI.toString()).mul(CircuitNumberExact.fromString('2')).sub(CircuitMath.arcsinExact(CircuitNumberExact.fromCircuitNumber(number))).toCircuitNumber();
   };
 
-  static arctan(number: CircuitNumber): CircuitNumber {
+  static arctan(_number: CircuitNumber): CircuitNumber {
     const TAYLOR_SERIE_TERM_PRECISION = 70;
 
-    let answer = CircuitNumber.from(0);
+    const number = CircuitNumberExact.fromCircuitNumber(_number);
+
+    let answer = CircuitNumberExact.fromString('0');
     let xPow = number;
-    let signPow = CircuitNumber.from(1);
+    let signPow = CircuitNumberExact.fromString('1');
 
     for (let i = 1; i < TAYLOR_SERIE_TERM_PRECISION; i += 2) {
-      answer = answer.add(signPow.mul(xPow.div(CircuitNumber.from(i))));
+      answer = answer.add(signPow.mul(xPow.div(CircuitNumberExact.fromString((i).toString()))));
       signPow = signPow.neg();
       xPow = xPow.mul(number).mul(number);
     }
 
-    return answer;
+    return answer.toCircuitNumber();
   };
 
-  static arcsinh(number: CircuitNumber): CircuitNumber {
-    return CircuitNumber.from(1);
-  };
+  // static arcsinh(number: CircuitNumber): CircuitNumber {
+  //   return CircuitNumber.from(1);
+  // };
 
-  static arccosh(number: CircuitNumber): CircuitNumber {
-    return CircuitNumber.from(1);
-  };
+  // static arccosh(number: CircuitNumber): CircuitNumber {
+  //   return CircuitNumber.from(1);
+  // };
 
-  static arctanh(number: CircuitNumber): CircuitNumber {
-    return CircuitNumber.from(1);
-  };
+  // static arctanh(number: CircuitNumber): CircuitNumber {
+  //   return CircuitNumber.from(1);
+  // };
 
   // Geometric Functions
 

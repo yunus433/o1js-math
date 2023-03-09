@@ -14,8 +14,6 @@ import {
   CircuitNumber
 } from './snarkyjs-math';
 
-const NUMBER = 0;
-
 export class Test extends SmartContract {
   @state(CircuitNumber) number = State<CircuitNumber>();
 
@@ -273,20 +271,5 @@ export class Test extends SmartContract {
   @method arctan() {
     this.number.assertEquals(this.number.get());
     this.number.set(CircuitMath.arctan(this.number.get()));
-  };
-
-  @method arcsinh() {
-    this.number.assertEquals(this.number.get());
-    this.number.set(CircuitMath.arcsinh(this.number.get()));
-  };
-
-  @method arccosh() {
-    this.number.assertEquals(this.number.get());
-    this.number.set(CircuitMath.arccosh(this.number.get()));
-  };
-
-  @method arctanh() {
-    this.number.assertEquals(this.number.get());
-    this.number.set(CircuitMath.arctanh(this.number.get()));
   };
 };
