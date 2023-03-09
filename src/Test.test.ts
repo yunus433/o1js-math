@@ -55,9 +55,9 @@ describe('Test', () => {
     // const number2 = CircuitNumber.from(3.9912344);
     // const number3 = CircuitNumber.from(0.03);
     // const number4 = CircuitNumber.from(787);
-    const number = CircuitNumber.from(0.45);
-    const number2 = CircuitNumber.from(2.33);
-    const answer = CircuitNumber.from(0.45 / 2.33);
+    // const number = CircuitNumber.from(0.45);
+    // const number2 = CircuitNumber.from(2.33);
+    // const answer = CircuitNumber.from(0.45 / 2.33);
 
     // (5 + 0.128) * (3 + 0.991) = (5 * 3) + (5 * 0.991) + (3 * 0.128) + (0.128 + 0.991)
 
@@ -85,9 +85,9 @@ describe('Test', () => {
     // console.log(CircuitNumber.from(924269.181808896).valueOf());
     // console.log(CircuitNumber.from(924269.181808896).equals(CircuitNumber.from(924269.181808896).add(CircuitNumber.from(0))).toBoolean());
 
-    console.log(CircuitMath.sin(CircuitNumber.from(43.2)).toNumber());
-    console.log(CircuitMath.cos(CircuitNumber.from(43.2)).toNumber());
-    console.log(CircuitMath.tan(CircuitNumber.from(43.2)).toNumber());
+    // console.log(CircuitMath.sin(CircuitNumber.from(43.2)).toNumber());
+    // console.log(CircuitMath.cos(CircuitNumber.from(43.2)).toNumber());
+    // console.log(CircuitMath.tan(CircuitNumber.from(43.2)).toNumber());
 
     // console.log(CircuitMath.logBase(number1, number2).toNumber());
     // console.log(CircuitMath.log10(CircuitNumber.from(10)).toNumber());
@@ -104,7 +104,8 @@ describe('Test', () => {
     // console.log(CircuitMath.ln(CircuitNumber.from(1.7)).toNumber());
     // console.log(CircuitMath.ln(CircuitNumber.from(2)).toNumber());
 
-    // console.log(CircuitMath.rootBase(CircuitNumber.from(13.45), CircuitNumber.from(4.3)).toNumber());
+    // console.log(CircuitMath.ln(CircuitNumber.from(1.9999999)).toNumber());
+    // console.log(CircuitMath.rootBase(CircuitNumber.from(13.45), CircuitNumber.from(2.3)).toNumber());
 
     // console.log(CircuitMath.arctan(CircuitNumber.from(0.2)).toNumber());
     
@@ -116,6 +117,8 @@ describe('Test', () => {
     // console.log(CircuitNumber.from(4.0).floor().toNumber());
     // console.log(CircuitNumber.from(4.9).ceil().toNumber());
     // console.log(CircuitNumber.from(4.9).trunc().toNumber());
+
+    console.log(CircuitMath.sqrt(CircuitNumber.from(43.67)).toNumber());
 
     // console.log(CircuitNumber.from(-4.0).floor().toNumber());
     // console.log(CircuitNumber.from(-4.9).ceil().toNumber());

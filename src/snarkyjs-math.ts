@@ -4,29 +4,26 @@ import {
   Field,
   Poseidon,
   Struct,
-  isReady,
-  UInt64,
-  Experimental,
-  SelfProof
+  isReady
 } from 'snarkyjs';
 
 await isReady;
 
-// SUPPORTED: -2e64 < X < 1e64.
+// SUPPORTED: -1e18 < X < 1e18.
 // DECIMAL PRECISION: 1e9
 
 const
-  PI = 3.141592654,
-  E = 2.718281828,
+  PI = 3.1415926535897932,
+  E = 2.7182818284590452,
   POSITIVE_INFINITY = 1e18,
   NEGATIVE_INFINITY = -1e18,
-  NUM_BITS = 256,
+  NUM_BITS = 64,
   PRECISION = 1e8,
   PRECISION_LOG = 8,
-  PRECISION_EXACT = 1e16,
-  PRECISION_EXACT_LOG = 16,
-  LN_2 = 0.693147181,
-  LN_10 = 2.302585093
+  PRECISION_EXACT = 1e18,
+  PRECISION_EXACT_LOG = 18,
+  LN_2 = 0.6931471805599453,
+  LN_10 = 2.3025850929940457
 ;
 
 // CircuitNumber class with PRECISION_EXACT rounding to help with taylor series
@@ -35,7 +32,7 @@ class CircuitNumberExact extends Struct({
   decimal: Field,
   sign: Field
 }) {
-  static NUM_BITS = 64;
+  static NUM_BITS = NUM_BITS;
 
   constructor (
     value: Field,
@@ -70,51 +67,32 @@ class CircuitNumberExact extends Struct({
     return r;
   };
 
-  private static precisionRound(number: number, precision_log: number): string {
-    let answer; 
+  private static precisionRound(number: number): string {
     let numberAsString = number.toString();
 
     if (numberAsString.includes('e'))
       numberAsString = CircuitNumberExact.widenScientificNotation(numberAsString);
 
-    let numberValue = numberAsString.split('e')[0].split('.')[0];
-    const numberDecimal = numberAsString.includes('.') ? numberAsString.split('e')[0].split('.')[1] : '';
-    if (numberDecimal.length > precision_log) {
-      if (precision_log == 0) {
-        let lastDigitFollowingZeros = '';
-        let lastDigit = parseInt(numberValue[numberValue.length - 1]) + (parseInt(numberDecimal[0]) >= 5 ? 1 : 0);
-        while (numberValue.length && lastDigit == 10) {
-          numberValue = numberValue.substring(0, numberValue.length - 1);
-          lastDigitFollowingZeros += '0';
-          lastDigit = parseInt(numberValue[numberValue.length - 1]) + 1;
-        }
+    let numberValue = numberAsString.split('.')[0];
 
-        answer = numberValue + lastDigitFollowingZeros
-      } else {
-        let lastDigitFollowingZeros = '';
-        let lastDigitDecimalFollowingZeros = '';
-        let lastDigit = parseInt(numberDecimal[precision_log - 1]) + (parseInt(numberDecimal[precision_log]) >= 5 ? 1 : 0);
+    if (numberAsString.split('.').length < 2)
+      return numberValue;
 
-        while (precision_log > 0 && lastDigit == 10) {
-          precision_log--;
-          lastDigitDecimalFollowingZeros += '0';
-          lastDigit = parseInt(numberDecimal[precision_log]) + 1;
-        }
+    let lastDigit = parseInt(numberAsString.split('.')[1][0]) + 1;
 
-        while (numberValue.length && lastDigit == 10) {
-          numberValue = numberValue.substring(0, numberValue.length - 1);
-          lastDigitFollowingZeros += '0';
-          lastDigit = parseInt(numberValue[numberValue.length - 1]) + 1;
-        }
-
-        answer = numberValue + lastDigitFollowingZeros + '.' + numberDecimal.substring(0, precision_log) + lastDigitDecimalFollowingZeros;
-      }
-    } else {
-      const decimal = numberDecimal + Array.from({ length: numberDecimal.length - precision_log }, _ => '0').join('');
-      answer = numberValue + (decimal.length ? '.' : '') + decimal;
+    const numberValueAsArray = [...numberValue];
+    
+    for (let i = numberValue.length - 1; i >= 0 && lastDigit == 10; i--) {
+      lastDigit = parseInt(numberValueAsArray[i]) + 1;
+      numberValueAsArray[i] = (lastDigit % 10).toString();
     }
 
-    return answer;
+    numberValue = numberValueAsArray.join('');
+
+    if (lastDigit == 10)
+      numberValue = '1' + numberValue;
+
+    return numberValue;
   };
 
   private static widenScientificNotation(number: string): string {
@@ -213,23 +191,6 @@ class CircuitNumberExact extends Struct({
     ) * (Number(this.value.toBigInt()) + Number(this.decimal.toBigInt()) / Number(PRECISION_EXACT))
   };
 
-  toString(): string {
-    return (
-      this.sign.equals(Field(-1)).toBoolean() ?
-      '-' :
-      ''
-    ) + this.value.toBigInt().toString() + '.' + Array.from({ length: PRECISION_EXACT_LOG - this.decimal.toBigInt().toString().length }, _ => '0').join('') + (this.decimal.toBigInt().toString())
-  };
-
-  valueOf(): number {
-    return this.toNumber().valueOf();
-  };
-
-  normalizeDegrees(): CircuitNumberExact {
-    const turn = CircuitNumberExact.fromString('360');
-    return CircuitNumberExact.copysign(this.abs().mod(turn), this).add(turn).mod(turn);
-  };
-
   normalizeRadians(): CircuitNumberExact {
     const turn = CircuitNumberExact.fromString((2 * PI).toString());
     return CircuitNumberExact.copysign(this.abs().mod(turn), this).add(turn).mod(turn);
@@ -249,6 +210,10 @@ class CircuitNumberExact extends Struct({
       this.decimal,
       Field(1)
     );
+  };
+
+  inv(): CircuitNumberExact {
+    return CircuitNumberExact.fromString('1').div(this);
   };
 
   neg(): CircuitNumberExact {
@@ -271,10 +236,6 @@ class CircuitNumberExact extends Struct({
 
   equals(other: CircuitNumberExact): Bool {
     return this.toField().equals(other.toField());
-  };
-
-  inPrecisionRange(other: CircuitNumberExact): Bool {
-    return this.sub(other).abs().lte(CircuitNumberExact.fromString(`0.01`));
   };
 
   gt(other: CircuitNumberExact): Bool {
@@ -483,13 +444,13 @@ class CircuitNumberExact extends Struct({
       Field,
       () => new Field(XValueSeal.toBigInt() * yDecimalSeal.toBigInt() / BigInt(PRECISION_EXACT))
     );
-    XDyValue.rangeCheckHelper(CircuitNumber.NUM_BITS).assertEquals(XDyValue);
+    XDyValue.rangeCheckHelper(CircuitNumberExact.NUM_BITS).assertEquals(XDyValue);
 
     let XDyDecimal = Circuit.witness(
       Field,
       () => new Field(XValueSeal.toBigInt() * yDecimalSeal.toBigInt() - (XValueSeal.toBigInt() * yDecimalSeal.toBigInt() / BigInt(PRECISION_EXACT) * BigInt(PRECISION_EXACT)))
     );
-    XDyDecimal.rangeCheckHelper(CircuitNumber.NUM_BITS).assertEquals(XDyDecimal);
+    XDyDecimal.rangeCheckHelper(CircuitNumberExact.NUM_BITS).assertEquals(XDyDecimal);
 
     const XDy = new CircuitNumberExact(
       XDyValue,
@@ -501,13 +462,13 @@ class CircuitNumberExact extends Struct({
       Field,
       () => new Field(yValueSeal.toBigInt() * xDecimalSeal.toBigInt() / BigInt(PRECISION_EXACT))
     );
-    YDxValue.rangeCheckHelper(CircuitNumber.NUM_BITS).assertEquals(YDxValue);
+    YDxValue.rangeCheckHelper(CircuitNumberExact.NUM_BITS).assertEquals(YDxValue);
 
     let YDxDecimal = Circuit.witness(
       Field,
       () => new Field(yValueSeal.toBigInt() * xDecimalSeal.toBigInt() - (yValueSeal.toBigInt() * xDecimalSeal.toBigInt() / BigInt(PRECISION_EXACT) * BigInt(PRECISION_EXACT)))
     );
-    YDxDecimal.rangeCheckHelper(CircuitNumber.NUM_BITS).assertEquals(YDxDecimal);
+    YDxDecimal.rangeCheckHelper(CircuitNumberExact.NUM_BITS).assertEquals(YDxDecimal);
 
     const YDx = new CircuitNumberExact(
       YDxValue,
@@ -545,44 +506,31 @@ class CircuitNumberExact extends Struct({
     const xDecimalSeal = this.decimal.seal();
     const yDecimalSeal = other.decimal.seal();
 
-    let term1Value = Circuit.witness(
+    let answerValue = Circuit.witness(
       Field,
-      () => new Field( CircuitNumberExact.precisionRound(Number(xValueSeal.toBigInt() * BigInt(PRECISION_EXACT)) / Number(yValueSeal.toBigInt() * BigInt(PRECISION_EXACT) + yDecimalSeal.toBigInt()), 0) )
+      () => new Field( CircuitNumberExact.widenScientificNotation((Number(xValueSeal.toBigInt() * BigInt(PRECISION_EXACT) + xDecimalSeal.toBigInt()) / Number(yValueSeal.toBigInt() * BigInt(PRECISION_EXACT) + yDecimalSeal.toBigInt())).toString()).split('.')[0] )
     );
-    term1Value.rangeCheckHelper(CircuitNumber.NUM_BITS).assertEquals(term1Value);
+    answerValue.rangeCheckHelper(CircuitNumber.NUM_BITS).assertEquals(answerValue);
 
-    const term1ValueSeal = term1Value.seal();
-    let term1Decimal = Circuit.witness(
+    const answerValueSeal = answerValue.seal();
+    let answerDecimal = Circuit.witness(
       Field,
-      () => new Field( BigInt(CircuitNumberExact.precisionRound(((Number(xValueSeal.toBigInt() * BigInt(PRECISION_EXACT)) / Number(yValueSeal.toBigInt() * BigInt(PRECISION_EXACT) + yDecimalSeal.toBigInt()) - Number(term1ValueSeal.toBigInt())) * PRECISION_EXACT), 0)) )
+      () => new Field( CircuitNumberExact.precisionRound((Number(xValueSeal.toBigInt() * BigInt(PRECISION_EXACT) + xDecimalSeal.toBigInt()) / Number(yValueSeal.toBigInt() * BigInt(PRECISION_EXACT) + yDecimalSeal.toBigInt()) - Number(answerValueSeal.toBigInt())) * PRECISION_EXACT).substring(0, PRECISION_EXACT_LOG) )
     );
-    term1Decimal.rangeCheckHelper(CircuitNumber.NUM_BITS).assertEquals(term1Decimal);
+    answerDecimal.rangeCheckHelper(CircuitNumber.NUM_BITS).assertEquals(answerDecimal);
 
-    let term2Value = Circuit.witness(
-      Field,
-      () => new Field( BigInt(CircuitNumberExact.precisionRound(Number(xDecimalSeal.toBigInt()) / Number(yValueSeal.toBigInt() * BigInt(PRECISION_EXACT) + yDecimalSeal.toBigInt()), 0)) )
-    );
-    term2Value.rangeCheckHelper(CircuitNumber.NUM_BITS).assertEquals(term2Value);
+    const doesRecur = (answerDecimal).gte(Field(PRECISION_EXACT));
 
-    const term2ValueSeal = term2Value.seal();
-    let term2Decimal = Circuit.witness(
-      Field,
-      () => new Field( BigInt(CircuitNumberExact.precisionRound(((Number(xDecimalSeal.toBigInt()) / Number(yValueSeal.toBigInt() * BigInt(PRECISION_EXACT) + yDecimalSeal.toBigInt()) - Number(term2ValueSeal.toBigInt())) * PRECISION_EXACT), 0)) )
-    );
-    term2Decimal.rangeCheckHelper(CircuitNumberExact.NUM_BITS).assertEquals(term2Decimal);
-
-    const doesRecur = (term1Decimal.add(term2Decimal)).gte(Field(PRECISION_EXACT));
-
-    const answerValue = term1Value.add(term2Value).add(Circuit.if(
+    const answerValueFinal = answerValue.add(Circuit.if(
       doesRecur,
       Field(1),
       Field(0)
     ));
-    const answerDecimal = term1Decimal.add(term2Decimal).sub(Circuit.if(
+    const answerDecimalFinal = answerDecimal.sub(Circuit.if(
       doesRecur,
       Field(PRECISION_EXACT),
       Field(0)
-    ));
+    ))
     const answerSign = Circuit.if(
       this.sign.equals(other.sign),
       Field(1),
@@ -590,8 +538,8 @@ class CircuitNumberExact extends Struct({
     );
 
     return new CircuitNumberExact(
-      answerValue,
-      answerDecimal,
+      answerValueFinal,
+      answerDecimalFinal,
       answerSign
     );
   };
@@ -628,51 +576,32 @@ export class CircuitNumber extends Struct({
 
   // Private Utility Functions
 
-  private static precisionRound(number: number, precision_log: number): string {
-    let answer;
+  private static precisionRound(number: number): string {
     let numberAsString = number.toString();
 
     if (numberAsString.includes('e'))
       numberAsString = CircuitNumber.widenScientificNotation(numberAsString);
 
-    let numberValue = numberAsString.split('e')[0].split('.')[0];
-    const numberDecimal = numberAsString.includes('.') ? numberAsString.split('e')[0].split('.')[1] : '';
-    if (numberDecimal.length > precision_log) {
-      if (precision_log == 0) {
-        let lastDigitFollowingZeros = '';
-        let lastDigit = parseInt(numberValue[numberValue.length - 1]) + (parseInt(numberDecimal[0]) >= 5 ? 1 : 0);
-        while (numberValue.length && lastDigit == 10) {
-          numberValue = numberValue.substring(0, numberValue.length - 1);
-          lastDigitFollowingZeros += '0';
-          lastDigit = parseInt(numberValue[numberValue.length - 1]) + 1;
-        }
+    let numberValue = numberAsString.split('.')[0];
 
-        answer = numberValue + lastDigitFollowingZeros
-      } else {
-        let lastDigitFollowingZeros = '';
-        let lastDigitDecimalFollowingZeros = '';
-        let lastDigit = parseInt(numberDecimal[precision_log - 1]) + (parseInt(numberDecimal[precision_log]) >= 5 ? 1 : 0);
+    if (numberAsString.split('.').length < 2)
+      return numberValue;
 
-        while (precision_log > 0 && lastDigit == 10) {
-          precision_log--;
-          lastDigitDecimalFollowingZeros += '0';
-          lastDigit = parseInt(numberDecimal[precision_log]) + 1;
-        }
+    let lastDigit = parseInt(numberAsString.split('.')[1][0]) + 1;
 
-        while (numberValue.length && lastDigit == 10) {
-          numberValue = numberValue.substring(0, numberValue.length - 1);
-          lastDigitFollowingZeros += '0';
-          lastDigit = parseInt(numberValue[numberValue.length - 1]) + 1;
-        }
-
-        answer = numberValue + lastDigitFollowingZeros + '.' + numberDecimal.substring(0, precision_log) + lastDigitDecimalFollowingZeros;
-      }
-    } else {
-      const decimal = numberDecimal + Array.from({ length: numberDecimal.length - precision_log }, _ => '0').join('');
-      answer = numberValue + (decimal.length ? '.' : '') + decimal;
+    const numberValueAsArray = [...numberValue];
+    
+    for (let i = numberValue.length - 1; i >= 0 && lastDigit == 10; i--) {
+      lastDigit = parseInt(numberValueAsArray[i]) + 1;
+      numberValueAsArray[i] = (lastDigit % 10).toString();
     }
 
-    return answer;
+    numberValue = numberValueAsArray.join('');
+
+    if (lastDigit == 10)
+      numberValue = '1' + numberValue;
+
+    return numberValue;
   };
 
   private static widenScientificNotation(number: string): string {
@@ -721,8 +650,8 @@ export class CircuitNumber extends Struct({
     const precisionRound = _precisionRound ? _precisionRound : PRECISION;
 
     const value = Math.trunc(_number);
-    const decimal = _number - value < 1 / PRECISION ? '0' : CircuitNumber.precisionRound((_number - value) * PRECISION, 0);
-  
+    const decimal = _number - value < 1 / PRECISION ? '0' : CircuitNumber.precisionRound((_number - value) * PRECISION);
+
     const sign = number >= 0 ? 1 : -1;
 
     return new CircuitNumber(
@@ -1161,39 +1090,28 @@ export class CircuitNumber extends Struct({
     const xDecimalSeal = this.decimal.seal();
     const yDecimalSeal = other.decimal.seal();
 
-    let term1Value = Circuit.witness(
+    let answerValue = Circuit.witness(
       Field,
-      () => new Field( CircuitNumber.precisionRound(Number(xValueSeal.toBigInt() * BigInt(PRECISION)) / Number(yValueSeal.toBigInt() * BigInt(PRECISION) + yDecimalSeal.toBigInt()), 0) )
+      () => new Field( CircuitNumber.widenScientificNotation((Number(xValueSeal.toBigInt() * BigInt(PRECISION) + xDecimalSeal.toBigInt()) / Number(yValueSeal.toBigInt() * BigInt(PRECISION) + yDecimalSeal.toBigInt())).toString()).split('.')[0] )
     );
-    term1Value.rangeCheckHelper(CircuitNumber.NUM_BITS).assertEquals(term1Value);
+    answerValue.rangeCheckHelper(CircuitNumber.NUM_BITS).assertEquals(answerValue);
 
-    const term1ValueSeal = term1Value.seal();
-    let term1Decimal = Circuit.witness(
+    const answerValueSeal = answerValue.seal();
+    let answerDecimal = Circuit.witness(
       Field,
-      () => new Field( BigInt(CircuitNumber.precisionRound(((Number(xValueSeal.toBigInt() * BigInt(PRECISION)) / Number(yValueSeal.toBigInt() * BigInt(PRECISION) + yDecimalSeal.toBigInt()) - Number(term1ValueSeal.toBigInt())) * PRECISION), 0)) )
+      () => new Field( CircuitNumber.precisionRound((Number(xValueSeal.toBigInt() * BigInt(PRECISION) + xDecimalSeal.toBigInt()) / Number(yValueSeal.toBigInt() * BigInt(PRECISION) + yDecimalSeal.toBigInt()) - Number(answerValueSeal.toBigInt())) * PRECISION).substring(0, PRECISION_LOG) )
     );
-    term1Decimal.rangeCheckHelper(CircuitNumber.NUM_BITS).assertEquals(term1Decimal);
+    answerDecimal.rangeCheckHelper(CircuitNumber.NUM_BITS).assertEquals(answerDecimal);
 
-    let term2Value = Circuit.witness(
-      Field,
-      () => new Field( BigInt(CircuitNumber.precisionRound(Number(xDecimalSeal.toBigInt()) / Number(yValueSeal.toBigInt() * BigInt(PRECISION) + yDecimalSeal.toBigInt()), 0)) )
-    );
-    term2Value.rangeCheckHelper(CircuitNumber.NUM_BITS).assertEquals(term2Value);
+    const doesRecur = (answerDecimal).gte(Field(PRECISION));
 
-    const term2ValueSeal = term2Value.seal();
-    let term2Decimal = Circuit.witness(
-      Field,
-      () => new Field( BigInt(CircuitNumber.precisionRound(((Number(xDecimalSeal.toBigInt()) / Number(yValueSeal.toBigInt() * BigInt(PRECISION) + yDecimalSeal.toBigInt()) - Number(term2ValueSeal.toBigInt())) * PRECISION), 0)) )
-    );
-    term2Decimal.rangeCheckHelper(CircuitNumber.NUM_BITS).assertEquals(term2Decimal);
-
-    const answerValue = term1Value.add(term2Value).add(Circuit.if(
-      (term1Decimal.add(term2Decimal)).gte(Field(PRECISION)),
+    const answerValueFinal = answerValue.add(Circuit.if(
+      doesRecur,
       Field(1),
       Field(0)
     ));
-    const answerDecimal = term1Decimal.add(term2Decimal).sub(Circuit.if(
-      (term1Decimal.add(term2Decimal)).gte(Field(PRECISION)),
+    const answerDecimalFinal = answerDecimal.sub(Circuit.if(
+      doesRecur,
       Field(PRECISION),
       Field(0)
     ))
@@ -1204,8 +1122,8 @@ export class CircuitNumber extends Struct({
     );
 
     return new CircuitNumber(
-      answerValue,
-      answerDecimal,
+      answerValueFinal,
+      answerDecimalFinal,
       answerSign
     );
   };
@@ -1268,7 +1186,7 @@ export class CircuitMath {
   };
 
   private static _ln(number: CircuitNumberExact): CircuitNumberExact {
-    const TAYLOR_SERIE_TERM_PRECISION = 20;
+    const TAYLOR_SERIE_TERM_PRECISION = 10;
 
     number.gt(CircuitNumberExact.fromString('0')).assertEquals(Bool(true));
     number.lte(CircuitNumberExact.fromString('2')).assertEquals(Bool(true));
@@ -1279,10 +1197,6 @@ export class CircuitMath {
     let answer = CircuitNumberExact.fromString('0');
 
     for (let i = 1; i <= TAYLOR_SERIE_TERM_PRECISION; i++) {
-      // console.log(i);
-      // console.log(xPow.div(CircuitNumberExact.fromString(i.toString())).toNumber());
-      // console.log(signPow.mul(xPow.div(CircuitNumberExact.fromString(i.toString()))).toNumber());
-      // console.log(answer.add(signPow.mul(xPow.div(CircuitNumberExact.fromString(i.toString())))).toNumber());
       answer = answer.add(signPow.mul(xPow.div(CircuitNumberExact.fromString(i.toString()))));
       xPow = xPow.mul(x);
       signPow = signPow.neg();
@@ -1301,7 +1215,57 @@ export class CircuitMath {
     return a.mul(b).div(CircuitMath.gcd(a, b));
   };
 
+  // Logarithmic Functions
+
+  private static lnExact(number: CircuitNumberExact): CircuitNumberExact {
+    number.gt(CircuitNumberExact.fromString('0')).assertEquals(Bool(true));
+
+    const power = CircuitMath.logTwo(number.trunc().toField()).add(CircuitNumberExact.fromString('1'));
+    const reminder = CircuitMath._ln(number.div(CircuitMath.intPow(CircuitNumberExact.fromString('2'), power)));
+
+    return CircuitNumberExact.fromString(LN_2.toString()).mul(power).add(reminder);
+  };
+
+  static ln(_number: CircuitNumber): CircuitNumber {
+    const number = CircuitNumberExact.fromCircuitNumber(_number);
+
+    number.gt(CircuitNumberExact.fromString('0')).assertEquals(Bool(true));
+
+    const power = CircuitMath.logTwo(number.trunc().toField()).add(CircuitNumberExact.fromString('1'));
+    const reminder = CircuitMath._ln(number.div(CircuitMath.intPow(CircuitNumberExact.fromString('2'), power)));
+
+    return CircuitNumberExact.fromString(LN_2.toString()).mul(power).add(reminder).toCircuitNumber();
+  };
+
+  static log2(number: CircuitNumber): CircuitNumber {
+    return CircuitMath.ln(number).div(CircuitNumber.from(LN_2));
+  };
+
+  static log10(number: CircuitNumber): CircuitNumber {
+    return CircuitMath.ln(number).div(CircuitNumber.from(LN_10));
+  };
+
+  static logBase(number: CircuitNumber, base: CircuitNumber): CircuitNumber {
+    return CircuitMath.ln(number).div(CircuitMath.ln(base));
+  };
+
   // Power & Root Functions
+
+  private static expExact(number: CircuitNumberExact): CircuitNumberExact {
+    const TAYLOR_SERIE_TERM_PRECISION = 13;
+
+    let answer = CircuitNumberExact.fromString('1');
+    let xPow = number;
+    let factorial = CircuitNumberExact.fromString('1');
+
+    for (let i = 1; i < TAYLOR_SERIE_TERM_PRECISION; i ++) {
+      answer = answer.add(xPow.div(factorial));
+      xPow = xPow.mul(number);
+      factorial = factorial.mul(CircuitNumberExact.fromString((i + 1).toString()));
+    }
+
+    return answer;
+  };
 
   static exp(_number: CircuitNumber): CircuitNumber {
     const number = CircuitNumberExact.fromCircuitNumber(_number);
@@ -1320,6 +1284,13 @@ export class CircuitMath {
     return answer.toCircuitNumber();
   };
 
+  private static powExact(base: CircuitNumberExact, power: CircuitNumberExact): CircuitNumberExact {
+    const intPow = power.abs().trunc();
+    const _answer = CircuitMath.intPow(base, intPow).mul(CircuitMath.expExact(power.abs().sub(intPow).mul(CircuitMath.lnExact(base))));
+    
+    return Circuit.if(power.sign.equals(Field(-1)), _answer.inv(), _answer);
+  };
+
   static pow(_base: CircuitNumber, power: CircuitNumber): CircuitNumber {
     const base = CircuitNumberExact.fromCircuitNumber(_base);
     const intPow = power.abs().trunc();
@@ -1329,40 +1300,15 @@ export class CircuitMath {
   };
 
   static sqrt(number: CircuitNumber): CircuitNumber {
-    return CircuitMath.pow(number, CircuitNumber.from(0.5));
+    return CircuitMath.powExact(CircuitNumberExact.fromCircuitNumber(number), CircuitNumberExact.fromString('0.5')).toCircuitNumber();
   };
 
   static cbrt(number: CircuitNumber): CircuitNumber {
-    return CircuitMath.pow(number, CircuitNumber.from(0.333333333));
+    return CircuitMath.powExact(CircuitNumberExact.fromCircuitNumber(number), CircuitNumberExact.fromString('0.33333333333333333')).toCircuitNumber();
   };
 
   static rootBase(number: CircuitNumber, base: CircuitNumber): CircuitNumber {
-    return CircuitMath.pow(number, base.inv());
-  };
-
-  // Logarithmic Functions
-
-  static ln(_number: CircuitNumber): CircuitNumber {
-    const number = CircuitNumberExact.fromCircuitNumber(_number);
-
-    number.gt(CircuitNumberExact.fromString('0')).assertEquals(Bool(true));
-
-    const power = CircuitMath.logTwo(number.trunc().toField());
-    const reminder = CircuitMath._ln(number.div(CircuitMath.intPow(CircuitNumberExact.fromString('2'), power)));
-
-    return CircuitNumberExact.fromString(LN_2.toString()).mul(power).add(reminder).toCircuitNumber();
-  };
-
-  static log2(number: CircuitNumber): CircuitNumber {
-    return CircuitMath.ln(number).div(CircuitNumber.from(LN_2));
-  };
-
-  static log10(number: CircuitNumber): CircuitNumber {
-    return CircuitMath.ln(number).div(CircuitNumber.from(LN_10));
-  };
-
-  static logBase(number: CircuitNumber, base: CircuitNumber): CircuitNumber {
-    return CircuitMath.ln(number).div(CircuitMath.ln(base));
+    return CircuitMath.powExact(CircuitNumberExact.fromCircuitNumber(number), CircuitNumberExact.fromCircuitNumber(base).inv()).toCircuitNumber();
   };
 
   // Arithmetic Comparison Functions
