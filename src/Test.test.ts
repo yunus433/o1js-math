@@ -15,11 +15,11 @@ import {
   CircuitConstant,
   CircuitMath,
   CircuitNumber
-} from './snarkyjs-math';
+} from './snarkyjs-math.js';
 
 import {
   Test
-} from './Test';
+} from './Test.js';
 
 function createLocalBlockchain() {
   const Local = Mina.LocalBlockchain({ proofsEnabled: false });
@@ -53,6 +53,10 @@ describe('Test', () => {
   it('Deploy `Test` Smart Contract with the Chosen Number', async () => {
     // Basic Arithmatic Functions with the SmartContract
 
+    // console.log(CircuitNumberExact.from(43.4).toNumber());
+    // console.log(CircuitNumberExact.from(2.4).add(CircuitNumberExact.from(3.5)).toNumber());
+    // console.log(CircuitNumberExact.from(2.3).div(CircuitNumberExact.from(7.2)).toNumber());
+
     // const number = CircuitNumber.from(0.45);
     // const number2 = CircuitNumber.from(2.33);
     // const answer = CircuitNumber.from(0.45 / 2.33);
@@ -69,7 +73,7 @@ describe('Test', () => {
     // });
     // await txn2.send();
 
-    // console.log(zkAppInstance.get().valueOf());
+    // console.log(zkAppInstance.get().toNumber());
 
     // expect(zkAppInstance.get().inPrecisionRange(answer)).toEqual(Bool(true));
 
