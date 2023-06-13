@@ -164,6 +164,16 @@ export class Test extends SmartContract {
     this.number.set(this.number.get().mod(number));
   };
 
+  @method gcd(number: CircuitNumber) {
+    this.number.assertEquals(this.number.get());
+    this.number.set(CircuitMath.gcd(this.number.get(), number));
+  };
+
+  @method lcm(number: CircuitNumber) {
+    this.number.assertEquals(this.number.get());
+    this.number.set(CircuitMath.lcm(this.number.get(), number));
+  };
+
   @method exp() {
     this.number.assertEquals(this.number.get());
     this.number.set(CircuitMath.exp(this.number.get()));

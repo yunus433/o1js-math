@@ -1,3 +1,11 @@
-import { Test } from './Test.js';
+import {
+  CircuitConstant,
+  CircuitNumber,
+  CircuitMath
+} from './snarkyjs-math';
 
-export { Test };
+export {
+  CircuitConstant,
+  CircuitNumber,
+  CircuitMath
+};

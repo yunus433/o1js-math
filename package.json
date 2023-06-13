@@ -1,14 +1,32 @@
 {
-  "name": "mina-math",
+  "name": "snarkyjs-math",
   "version": "0.1.0",
-  "description": "",
-  "author": "",
+  "description": "A native provable big decimal and math library for snarkyjs.",
+  "author": "Yunus Gürlek",
   "license": "Apache-2.0",
   "keywords": [
-    "mina-zkapp",
-    "mina-zk-app",
-    "mina-dapp",
-    "zkapp"
+    "snarkyjs",
+    "math",
+    "arbitrary",
+    "arithmetic",
+    "big",
+    "bigdecimal",
+    "bigint",
+    "biginteger",
+    "bignum",
+    "decimal",
+    "float",
+    "number",
+    "precision",
+    "type",
+    "typescript",
+    "logarithmic",
+    "exponential",
+    "trigonometric",
+    "hyperbolic",
+    "inverse",
+    "arctrigonometric",
+    "archyperbolic"
   ],
   "type": "module",
   "main": "build/src/index.js",
@@ -23,6 +41,14 @@
     "testw": "node --experimental-vm-modules --experimental-wasm-modules --experimental-wasm-threads node_modules/jest/bin/jest.js --watch",
     "lint": "npx eslint src/* --fix"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yunus433/snarkyjs-math"
+  },
+  "bugs": {
+    "url": "https://github.com/yunus433/snarkyjs-math/issues"
+  },
+  "homepage": "https://github.com/yunus433/snarkyjs-math#readme",
   "lint-staged": {
     "**/*": [
       "eslint src/* --fix",
@@ -46,5 +72,8 @@
   },
   "peerDependencies": {
     "snarkyjs": "^0.7.3"
+  },
+  "dependencies": {
+    "typescript-bignumber": "^1.0.0"
   }
 }
