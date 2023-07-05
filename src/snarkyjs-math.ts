@@ -1,11 +1,9 @@
 import {
   Bool,
-  Circuit,
   Field,
   Poseidon,
   Struct,
-  Provable,
-  isReady
+  Provable
 } from 'snarkyjs';
 
 import { BigNumber } from './BigNumber';
