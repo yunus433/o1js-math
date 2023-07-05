@@ -11,7 +11,7 @@ import {
 } from 'snarkyjs';
 
 import {
-  // CircuitMath,
+  CircuitMath,
   CircuitNumber
 } from './snarkyjs-math.js';
 
@@ -36,135 +36,135 @@ export class Test extends SmartContract {
     this.number.set(this.number.get().abs());
   };
 
-  // @method ceil() {
-  //   this.number.assertEquals(this.number.get());
-  //   this.number.set(this.number.get().ceil());
-  // };
+  @method ceil() {
+    this.number.assertEquals(this.number.get());
+    this.number.set(this.number.get().ceil());
+  };
 
-  // @method floor() {
-  //   this.number.assertEquals(this.number.get());
-  //   this.number.set(this.number.get().floor());
-  // };
+  @method floor() {
+    this.number.assertEquals(this.number.get());
+    this.number.set(this.number.get().floor());
+  };
 
-  // @method inv() {
-  //   this.number.assertEquals(this.number.get());
-  //   this.number.set(this.number.get().inv());
-  // };
+  @method inv() {
+    this.number.assertEquals(this.number.get());
+    this.number.set(this.number.get().inv());
+  };
 
-  // @method neg() {
-  //   this.number.assertEquals(this.number.get());
-  //   this.number.set(this.number.get().neg());
-  // };
+  @method neg() {
+    this.number.assertEquals(this.number.get());
+    this.number.set(this.number.get().neg());
+  };
 
-  // @method round() {
-  //   this.number.assertEquals(this.number.get());
-  //   this.number.set(this.number.get().round());
-  // };
+  @method round() {
+    this.number.assertEquals(this.number.get());
+    this.number.set(this.number.get().round());
+  };
 
-  // @method trunc() {
-  //   this.number.assertEquals(this.number.get());
-  //   this.number.set(this.number.get().trunc());
-  // };
+  @method trunc() {
+    this.number.assertEquals(this.number.get());
+    this.number.set(this.number.get().trunc());
+  };
 
-  // @method degrees() {
-  //   this.number.assertEquals(this.number.get());
-  //   this.number.set(this.number.get().degrees());
-  // };
+  @method degrees() {
+    this.number.assertEquals(this.number.get());
+    this.number.set(this.number.get().degrees());
+  };
 
-  // @method radians() {
-  //   this.number.assertEquals(this.number.get());
-  //   this.number.set(this.number.get().radians());
-  // };
+  @method radians() {
+    this.number.assertEquals(this.number.get());
+    this.number.set(this.number.get().radians());
+  };
 
-  // @method normalizeDegrees() {
-  //   this.number.assertEquals(this.number.get());
-  //   this.number.set(this.number.get().normalizeDegrees());
-  // };
+  @method normalizeDegrees() {
+    this.number.assertEquals(this.number.get());
+    this.number.set(this.number.get().normalizeDegrees());
+  };
 
-  // @method normalizeRadians() {
-  //   this.number.assertEquals(this.number.get());
-  //   this.number.set(this.number.get().normalizeRadians());
-  // };
+  @method normalizeRadians() {
+    this.number.assertEquals(this.number.get());
+    this.number.set(this.number.get().normalizeRadians());
+  };
 
-  // @method isConstant(): boolean {
-  //   this.number.assertEquals(this.number.get());
-  //   return this.number.get().isConstant();
-  // };
+  @method isConstant(): boolean {
+    this.number.assertEquals(this.number.get());
+    return this.number.get().isConstant();
+  };
 
-  // @method isInteger(): Bool {
-  //   this.number.assertEquals(this.number.get());
-  //   return this.number.get().isInteger();
-  // };
+  @method isInteger(): Bool {
+    this.number.assertEquals(this.number.get());
+    return this.number.get().isInteger();
+  };
 
-  // @method isPositive(): Bool {
-  //   this.number.assertEquals(this.number.get());
-  //   return this.number.get().isPositive();
-  // };
+  @method isPositive(): Bool {
+    this.number.assertEquals(this.number.get());
+    return this.number.get().isPositive();
+  };
 
-  // @method equals(number: CircuitNumber): Bool {
-  //   this.number.assertEquals(this.number.get());
-  //   return this.number.get().equals(number);
-  // };
+  @method equals(number: CircuitNumber): Bool {
+    this.number.assertEquals(this.number.get());
+    return this.number.get().equals(number);
+  };
 
-  // @method inPrecisionRange(number: CircuitNumber): Bool {
-  //   this.number.assertEquals(this.number.get());
-  //   return this.number.get().inPrecisionRange(number);
-  // };
+  @method inPrecisionRange(number: CircuitNumber): Bool {
+    this.number.assertEquals(this.number.get());
+    return this.number.get().inPrecisionRange(number);
+  };
 
-  // @method greaterThan(number: CircuitNumber): Bool {
-  //   this.number.assertEquals(this.number.get());
-  //   return this.number.get().greaterThan(number);
-  // };
+  @method greaterThan(number: CircuitNumber): Bool {
+    this.number.assertEquals(this.number.get());
+    return this.number.get().greaterThan(number);
+  };
 
-  // @method greaterThanOrEqual(number: CircuitNumber): Bool {
-  //   this.number.assertEquals(this.number.get());
-  //   return this.number.get().greaterThanOrEqual(number);
-  // };
+  @method greaterThanOrEqual(number: CircuitNumber): Bool {
+    this.number.assertEquals(this.number.get());
+    return this.number.get().greaterThanOrEqual(number);
+  };
 
-  // @method lessThan(number: CircuitNumber): Bool {
-  //   this.number.assertEquals(this.number.get());
-  //   return this.number.get().lessThan(number);
-  // };
+  @method lessThan(number: CircuitNumber): Bool {
+    this.number.assertEquals(this.number.get());
+    return this.number.get().lessThan(number);
+  };
 
-  // @method lessThanOrEqual(number: CircuitNumber): Bool {
-  //   this.number.assertEquals(this.number.get());
-  //   return this.number.get().lessThanOrEqual(number);
-  // };
+  @method lessThanOrEqual(number: CircuitNumber): Bool {
+    this.number.assertEquals(this.number.get());
+    return this.number.get().lessThanOrEqual(number);
+  };
 
-  // @method add(number: CircuitNumber) {
-  //   this.number.assertEquals(this.number.get());
-  //   this.number.set(this.number.get().add(number));
-  // };
+  @method add(number: CircuitNumber) {
+    this.number.assertEquals(this.number.get());
+    this.number.set(this.number.get().add(number));
+  };
 
-  // @method sub(number: CircuitNumber) {
-  //   this.number.assertEquals(this.number.get());
-  //   this.number.set(this.number.get().sub(number));
-  // };
+  @method sub(number: CircuitNumber) {
+    this.number.assertEquals(this.number.get());
+    this.number.set(this.number.get().sub(number));
+  };
 
-  // @method mul(number: CircuitNumber) {
-  //   this.number.assertEquals(this.number.get());
-  //   this.number.set(this.number.get().mul(number));
-  // };
+  @method mul(number: CircuitNumber) {
+    this.number.assertEquals(this.number.get());
+    this.number.set(this.number.get().mul(number));
+  };
 
-  // @method div(number: CircuitNumber) {
-  //   this.number.assertEquals(this.number.get());
-  //   this.number.set(this.number.get().div(number));
-  // };
+  @method div(number: CircuitNumber) {
+    this.number.assertEquals(this.number.get());
+    this.number.set(this.number.get().div(number));
+  };
 
-  // @method mod(number: CircuitNumber) {
-  //   this.number.assertEquals(this.number.get());
-  //   this.number.set(this.number.get().mod(number));
-  // };
+  @method mod(number: CircuitNumber) {
+    this.number.assertEquals(this.number.get());
+    this.number.set(this.number.get().mod(number));
+  };
 
-  // @method gcd(number: CircuitNumber) {
-  //   this.number.assertEquals(this.number.get());
-  //   this.number.set(CircuitMath.gcd(this.number.get(), number));
-  // };
+  @method gcd(number: CircuitNumber) {
+    this.number.assertEquals(this.number.get());
+    this.number.set(CircuitMath.gcd(this.number.get(), number));
+  };
 
-  // @method lcm(number: CircuitNumber) {
-  //   this.number.assertEquals(this.number.get());
-  //   this.number.set(CircuitMath.lcm(this.number.get(), number));
-  // };
+  @method lcm(number: CircuitNumber) {
+    this.number.assertEquals(this.number.get());
+    this.number.set(CircuitMath.lcm(this.number.get(), number));
+  };
 
   // @method exp() {
   //   this.number.assertEquals(this.number.get());
