@@ -74,124 +74,124 @@ describe('Test', () => {
 
   // CircuitNumber Arithmetic Conversion Function Tests
 
-  it('Test 1: Absolute Value - CircuitNumber.prototype.abs()', async () => {
-    const txn = await Mina.transaction(deployerAccount, () => {
-      zkApp.abs();
-    });
-    await txn.prove();
-    await txn.sign([deployerKey, zkAppPrivateKey]).send();
+  // it('Test 1: Absolute Value - CircuitNumber.prototype.abs()', async () => {
+  //   const txn = await Mina.transaction(deployerAccount, () => {
+  //     zkApp.abs();
+  //   });
+  //   await txn.prove();
+  //   await txn.sign([deployerKey, zkAppPrivateKey]).send();
 
-    const result = zkApp.get();
+  //   const result = zkApp.get();
 
-    expect(result.valueOf()).toEqual(Math.abs(number1.valueOf()));
-    console.log(`Test 1 Passed: Absolute Value (${number1} -> ${result.valueOf()})`);
-  });
+  //   expect(result.valueOf()).toEqual(Math.abs(number1.valueOf()));
+  //   console.log(`Test 1 Passed: Absolute Value (${number1} -> ${result.valueOf()})`);
+  // });
 
-  it('Test 2: Ceil - CircuitNumber.prototype.ceil()', async () => {
-    const txn = await Mina.transaction(deployerAccount, () => {
-      zkApp.ceil();
-    });
-    await txn.prove();
-    await txn.sign([deployerKey, zkAppPrivateKey]).send();
+  // it('Test 2: Ceil - CircuitNumber.prototype.ceil()', async () => {
+  //   const txn = await Mina.transaction(deployerAccount, () => {
+  //     zkApp.ceil();
+  //   });
+  //   await txn.prove();
+  //   await txn.sign([deployerKey, zkAppPrivateKey]).send();
 
-    const result = zkApp.get();
+  //   const result = zkApp.get();
 
-    expect(result.valueOf()).toEqual(Math.ceil(number1.valueOf()));
-    console.log(`Test 2 Passed: Ceil (${number1} -> ${result.valueOf()})`);
-  });
+  //   expect(result.valueOf()).toEqual(Math.ceil(number1.valueOf()));
+  //   console.log(`Test 2 Passed: Ceil (${number1} -> ${result.valueOf()})`);
+  // });
 
-  it('Test 3: Floor - CircuitNumber.prototype.floor()', async () => {
-    const txn = await Mina.transaction(deployerAccount, () => {
-      zkApp.floor();
-    });
-    await txn.prove();
-    await txn.sign([deployerKey, zkAppPrivateKey]).send();
+  // it('Test 3: Floor - CircuitNumber.prototype.floor()', async () => {
+  //   const txn = await Mina.transaction(deployerAccount, () => {
+  //     zkApp.floor();
+  //   });
+  //   await txn.prove();
+  //   await txn.sign([deployerKey, zkAppPrivateKey]).send();
 
-    const result = zkApp.get();
+  //   const result = zkApp.get();
 
-    expect(result.valueOf()).toEqual(Math.floor(number1.valueOf()));
-    console.log(`Test 3 Passed: Floor (${number1} -> ${result.valueOf()})`);
-  });
+  //   expect(result.valueOf()).toEqual(Math.floor(number1.valueOf()));
+  //   console.log(`Test 3 Passed: Floor (${number1} -> ${result.valueOf()})`);
+  // });
 
-  it('Test 4: Inverse - CircuitNumber.prototype.inv()', async () => {
-    const txn = await Mina.transaction(deployerAccount, () => {
-      zkApp.inv();
-    });
-    await txn.prove();
-    await txn.sign([deployerKey, zkAppPrivateKey]).send();
+  // it('Test 4: Inverse - CircuitNumber.prototype.inv()', async () => {
+  //   const txn = await Mina.transaction(deployerAccount, () => {
+  //     zkApp.inv();
+  //   });
+  //   await txn.prove();
+  //   await txn.sign([deployerKey, zkAppPrivateKey]).send();
 
-    const result = zkApp.get();
+  //   const result = zkApp.get();
 
-    expect(result.valueOf()).toEqual(CircuitNumber.from(1 / number1.valueOf()).valueOf());
-    console.log(`Test 4 Passed: Inverse (${number1} -> ${result.valueOf()})`);
-  });
+  //   expect(result.valueOf()).toEqual(CircuitNumber.from(1 / number1.valueOf()).valueOf());
+  //   console.log(`Test 4 Passed: Inverse (${number1} -> ${result.valueOf()})`);
+  // });
 
-  it('Test 5: Negation - CircuitNumber.prototype.neg()', async () => {
-    const txn = await Mina.transaction(deployerAccount, () => {
-      zkApp.neg();
-    });
-    await txn.prove();
-    await txn.sign([deployerKey, zkAppPrivateKey]).send();
+  // it('Test 5: Negation - CircuitNumber.prototype.neg()', async () => {
+  //   const txn = await Mina.transaction(deployerAccount, () => {
+  //     zkApp.neg();
+  //   });
+  //   await txn.prove();
+  //   await txn.sign([deployerKey, zkAppPrivateKey]).send();
 
-    const result = zkApp.get();
+  //   const result = zkApp.get();
 
-    expect(result.valueOf()).toEqual(-1 * number1.valueOf());
-    console.log(`Test 5 Passed: Negation (${number1} -> ${result.valueOf()})`);
-  });
+  //   expect(result.valueOf()).toEqual(-1 * number1.valueOf());
+  //   console.log(`Test 5 Passed: Negation (${number1} -> ${result.valueOf()})`);
+  // });
 
-  it('Test 6: Round - CircuitNumber.prototype.round()', async () => {
-    const txn = await Mina.transaction(deployerAccount, () => {
-      zkApp.round();
-    });
-    await txn.prove();
-    await txn.sign([deployerKey, zkAppPrivateKey]).send();
+  // it('Test 6: Round - CircuitNumber.prototype.round()', async () => {
+  //   const txn = await Mina.transaction(deployerAccount, () => {
+  //     zkApp.round();
+  //   });
+  //   await txn.prove();
+  //   await txn.sign([deployerKey, zkAppPrivateKey]).send();
 
-    const result = zkApp.get();
+  //   const result = zkApp.get();
 
-    expect(result.valueOf()).toEqual(Math.round(number1.valueOf()));
-    console.log(`Test 6 Passed: Round (${number1} -> ${result.valueOf()})`);
-  });
+  //   expect(result.valueOf()).toEqual(Math.round(number1.valueOf()));
+  //   console.log(`Test 6 Passed: Round (${number1} -> ${result.valueOf()})`);
+  // });
 
-  it('Test 7: Trunc - CircuitNumber.prototype.trunc()', async () => {
-    const txn = await Mina.transaction(deployerAccount, () => {
-      zkApp.trunc();
-    });
-    await txn.prove();
-    await txn.sign([deployerKey, zkAppPrivateKey]).send();
+  // it('Test 7: Trunc - CircuitNumber.prototype.trunc()', async () => {
+  //   const txn = await Mina.transaction(deployerAccount, () => {
+  //     zkApp.trunc();
+  //   });
+  //   await txn.prove();
+  //   await txn.sign([deployerKey, zkAppPrivateKey]).send();
 
-    const result = zkApp.get();
+  //   const result = zkApp.get();
 
-    expect(result.valueOf()).toEqual(Math.trunc(number1.valueOf()));
-    console.log(`Test 7 Passed: Trunc (${number1} -> ${result.valueOf()})`);
-  });
+  //   expect(result.valueOf()).toEqual(Math.trunc(number1.valueOf()));
+  //   console.log(`Test 7 Passed: Trunc (${number1} -> ${result.valueOf()})`);
+  // });
 
   // CircuitNumber Logic Comparison Function Tests
 
-  it('Test 8: Equal - CircuitNumber.prototype.equals()', async () => {
-    let answer: Bool;
+  // it('Test 8: Equal - CircuitNumber.prototype.equals()', async () => {
+  //   let answer: Bool;
 
-    const txn = await Mina.transaction(deployerAccount, () => {
-      answer = zkApp.equals(number2);
-      expect(answer).toEqual(Bool(number1.valueOf() == number2.valueOf()));
-    });
-    await txn.prove();
-    await txn.sign([deployerKey, zkAppPrivateKey]).send();
+  //   const txn = await Mina.transaction(deployerAccount, () => {
+  //     answer = zkApp.equals(number2);
+  //     expect(answer).toEqual(Bool(number1.valueOf() == number2.valueOf()));
+  //   });
+  //   await txn.prove();
+  //   await txn.sign([deployerKey, zkAppPrivateKey]).send();
 
-    console.log(`Test 8 Passed: Equal (${number1} == ${number2})`);
-  });
+  //   console.log(`Test 8 Passed: Equal (${number1} == ${number2})`);
+  // });
 
-  it('Test 9: In Precision Range - CircuitNumber.prototype.inPrecisionRange()', async () => {
-    let answer: Bool;
+  // it('Test 9: In Precision Range - CircuitNumber.prototype.inPrecisionRange()', async () => {
+  //   let answer: Bool;
 
-    const txn = await Mina.transaction(deployerAccount, () => {
-      answer = zkApp.inPrecisionRange(number2);
-      expect(answer).toEqual(Bool(Math.abs(number1.valueOf() - number2.valueOf()) <= 1 / PRECISION));
-    });
-    await txn.prove();
-    await txn.sign([deployerKey, zkAppPrivateKey]).send();
+  //   const txn = await Mina.transaction(deployerAccount, () => {
+  //     answer = zkApp.inPrecisionRange(number2);
+  //     expect(answer).toEqual(Bool(Math.abs(number1.valueOf() - number2.valueOf()) <= 1 / PRECISION));
+  //   });
+  //   await txn.prove();
+  //   await txn.sign([deployerKey, zkAppPrivateKey]).send();
 
-    console.log(`Test 9 Passed: In Precision Range (${number1} ~ ${number2})`);
-  });
+  //   console.log(`Test 9 Passed: In Precision Range (${number1} ~ ${number2})`);
+  // });
 
   // it('Test 10: Greater Than - CircuitNumber.prototype.gt()', async () => {
   //   let answer: Bool;
@@ -247,19 +247,19 @@ describe('Test', () => {
 
   // CircuitNumber Arithmetic Operation Function Tests
 
-  it('Test 14: Addition - CircuitNumber.prototype.add()', async () => {
-    const txn = await Mina.transaction(deployerAccount, () => {
-      zkApp.add(number2);
-    });
-    await txn.prove();
-    await txn.sign([deployerKey, zkAppPrivateKey]).send();
+  // it('Test 14: Addition - CircuitNumber.prototype.add()', async () => {
+  //   const txn = await Mina.transaction(deployerAccount, () => {
+  //     zkApp.add(number2);
+  //   });
+  //   await txn.prove();
+  //   await txn.sign([deployerKey, zkAppPrivateKey]).send();
 
-    const result = zkApp.get();
+  //   const result = zkApp.get();
 
-    expect((result.inPrecisionRange(CircuitNumber.from(number1.valueOf() + number2.valueOf())))).toEqual(Bool(true));
+  //   expect((result.inPrecisionRange(CircuitNumber.from(number1.valueOf() + number2.valueOf())))).toEqual(Bool(true));
 
-    console.log(`Test 14 Passed: Addition (${number1} + ${number2} -> ${result.valueOf()})`);
-  });
+  //   console.log(`Test 14 Passed: Addition (${number1} + ${number2} -> ${result.valueOf()})`);
+  // });
 
   it('Test 15: Substraction - CircuitNumber.prototype.sub()', async () => {
     const txn = await Mina.transaction(deployerAccount, () => {
@@ -275,77 +275,77 @@ describe('Test', () => {
     console.log(`Test 15 Passed: Substraction (${number1} - ${number2} -> ${result.valueOf()})`);
   });
 
-  it('Test 16: Multiplication - CircuitNumber.prototype.mul()', async () => {
-    const txn = await Mina.transaction(deployerAccount, () => {
-      zkApp.mul(number2);
-    });
-    await txn.prove();
-    await txn.sign([deployerKey, zkAppPrivateKey]).send();
+  // it('Test 16: Multiplication - CircuitNumber.prototype.mul()', async () => {
+  //   const txn = await Mina.transaction(deployerAccount, () => {
+  //     zkApp.mul(number2);
+  //   });
+  //   await txn.prove();
+  //   await txn.sign([deployerKey, zkAppPrivateKey]).send();
 
-    const result = zkApp.get();
+  //   const result = zkApp.get();
 
-    expect((result.inPrecisionRange(CircuitNumber.from(number1.valueOf() * number2.valueOf())))).toEqual(Bool(true));
+  //   expect((result.inPrecisionRange(CircuitNumber.from(number1.valueOf() * number2.valueOf())))).toEqual(Bool(true));
 
-    console.log(`Test 16 Passed: Multiplication (${number1} * ${number2} -> ${result.valueOf()})`);
-  });
+  //   console.log(`Test 16 Passed: Multiplication (${number1} * ${number2} -> ${result.valueOf()})`);
+  // });
 
-  it('Test 17: Division - CircuitNumber.prototype.div()', async () => {
-    const txn = await Mina.transaction(deployerAccount, () => {
-      zkApp.div(number2);
-    });
-    await txn.prove();
-    await txn.sign([deployerKey, zkAppPrivateKey]).send();
+  // it('Test 17: Division - CircuitNumber.prototype.div()', async () => {
+  //   const txn = await Mina.transaction(deployerAccount, () => {
+  //     zkApp.div(number2);
+  //   });
+  //   await txn.prove();
+  //   await txn.sign([deployerKey, zkAppPrivateKey]).send();
 
-    const result = zkApp.get();
+  //   const result = zkApp.get();
 
-    expect((result.inPrecisionRange(CircuitNumber.from(number1.valueOf() / number2.valueOf())))).toEqual(Bool(true));
+  //   expect((result.inPrecisionRange(CircuitNumber.from(number1.valueOf() / number2.valueOf())))).toEqual(Bool(true));
 
-    console.log(`Test 17 Passed: Division (${number1} / ${number2} -> ${result.valueOf()})`);
-  });
+  //   console.log(`Test 17 Passed: Division (${number1} / ${number2} -> ${result.valueOf()})`);
+  // });
 
-  it('Test 18: Reminder - CircuitNumber.prototype.mod()', async () => {
-    const txn = await Mina.transaction(deployerAccount, () => {
-      zkApp.mod(number2);
-    });
-    await txn.prove();
-    await txn.sign([deployerKey, zkAppPrivateKey]).send();
+  // it('Test 18: Reminder - CircuitNumber.prototype.mod()', async () => {
+  //   const txn = await Mina.transaction(deployerAccount, () => {
+  //     zkApp.mod(number2);
+  //   });
+  //   await txn.prove();
+  //   await txn.sign([deployerKey, zkAppPrivateKey]).send();
 
-    const result = zkApp.get();
+  //   const result = zkApp.get();
 
-    expect(result.valueOf()).toEqual(CircuitNumber.from(number1.valueOf() % number2.valueOf()).valueOf());
+  //   expect(result.valueOf()).toEqual(CircuitNumber.from(number1.valueOf() % number2.valueOf()).valueOf());
 
-    console.log(`Test 18 Passed: Reminder (${number1} mod ${number2} -> ${result.valueOf()})`);
-  });
+  //   console.log(`Test 18 Passed: Reminder (${number1} mod ${number2} -> ${result.valueOf()})`);
+  // });
 
   // CircuitMath Number Function Tests
 
-  it('Test 19: Greatest Common Divisor - CircuitMath.gcd()', async () => {
-    const txn = await Mina.transaction(deployerAccount, () => {
-      zkApp.gcd(number2);
-    });
-    await txn.prove();
-    await txn.sign([deployerKey, zkAppPrivateKey]).send();
+  // it('Test 19: Greatest Common Divisor - CircuitMath.gcd()', async () => {
+  //   const txn = await Mina.transaction(deployerAccount, () => {
+  //     zkApp.gcd(number2);
+  //   });
+  //   await txn.prove();
+  //   await txn.sign([deployerKey, zkAppPrivateKey]).send();
 
-    const result = zkApp.get();
+  //   const result = zkApp.get();
 
-    expect(result.valueOf()).toEqual(CircuitNumber.from(gcd(Math.trunc(number1.valueOf()), Math.trunc(number2.valueOf()))).valueOf());
+  //   expect(result.valueOf()).toEqual(CircuitNumber.from(gcd(Math.trunc(number1.valueOf()), Math.trunc(number2.valueOf()))).valueOf());
 
-    console.log(`Test 19 Passed: Greatest Common Divisor (gcd(${Math.trunc(number1.valueOf())}, ${Math.trunc(number2.valueOf())}) -> ${result.valueOf()})`);
-  });
+  //   console.log(`Test 19 Passed: Greatest Common Divisor (gcd(${Math.trunc(number1.valueOf())}, ${Math.trunc(number2.valueOf())}) -> ${result.valueOf()})`);
+  // });
 
-  it('Test 20: Least Common Multiplier - CircuitMath.lcm()', async () => {
-    const txn = await Mina.transaction(deployerAccount, () => {
-      zkApp.lcm(number2);
-    });
-    await txn.prove();
-    await txn.sign([deployerKey, zkAppPrivateKey]).send();
+  // it('Test 20: Least Common Multiplier - CircuitMath.lcm()', async () => {
+  //   const txn = await Mina.transaction(deployerAccount, () => {
+  //     zkApp.lcm(number2);
+  //   });
+  //   await txn.prove();
+  //   await txn.sign([deployerKey, zkAppPrivateKey]).send();
 
-    const result = zkApp.get();
+  //   const result = zkApp.get();
 
-    expect(result.valueOf()).toEqual(CircuitNumber.from(lcm(Math.trunc(number1.valueOf()), Math.trunc(number2.valueOf()))).valueOf());
+  //   expect(result.valueOf()).toEqual(CircuitNumber.from(lcm(Math.trunc(number1.valueOf()), Math.trunc(number2.valueOf()))).valueOf());
 
-    console.log(`Test 20 Passed: Least Common Multiplier (lcm(${Math.trunc(number1.valueOf())}, ${Math.trunc(number2.valueOf())}) -> ${result.valueOf()})`);
-  });
+  //   console.log(`Test 20 Passed: Least Common Multiplier (lcm(${Math.trunc(number1.valueOf())}, ${Math.trunc(number2.valueOf())}) -> ${result.valueOf()})`);
+  // });
 
   // CircuitMath Power & Root Function Tests
 

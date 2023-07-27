@@ -751,11 +751,15 @@ export class CircuitNumber extends Struct({
   };
 
   toNumber(): Number {
+    const sign = this._sign; // A Field element
+    console.log(sign.isConstant()); // Prints false, as this is an argument
+    console.log(sign.toBigInt()); // Throws an error
+
     return (
-      this._sign.equals(Field(1)).toBoolean() ?
+      this._sign.toBigInt() == 1n ?
       Number(1) :
       Number(-1)
-    ) * (Number(this._value.toBigInt()) / Number(PRECISION));
+    ) * (Number(this._value.toConstant().toBigInt()) / Number(PRECISION));
   };
 
   toString(): String {
@@ -988,6 +992,9 @@ export class CircuitNumber extends Struct({
   };
 
   sub(other: CircuitNumber): CircuitNumber {
+    console.log(this.toNumber());
+    console.log(other.neg().toNumber());
+    console.log(this.add(other.neg()).toNumber());
     return this.add(other.neg());
   };
 
