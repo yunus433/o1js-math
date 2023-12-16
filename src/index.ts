@@ -2,7 +2,7 @@ import {
   CircuitConstant,
   CircuitNumber,
   CircuitMath
-} from './snarkyjs-math';
+} from './o1js-math';
 
 export {
   CircuitConstant,

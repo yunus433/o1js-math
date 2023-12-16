@@ -4,16 +4,17 @@ import {
   Poseidon,
   Struct,
   Provable
-} from 'snarkyjs';
+} from 'o1js';
 
 import { BigNumber } from './BigNumber';
+import { fieldMod, precisionRound, roundString, widenScientificNotation } from './utility'
 
 // IMPORTANT NOTES:
 // Library supports real numbers in the range: [-1e18, 1e18]
 // Integer part of the number must fit in 64 bits
 // Decimal part of the number can be chosen as wanted, it will be rounded to PRECISION digits
-// The current precision is, PRECISION = 8 digits
-// Do not forget to change the NUM_BITS and PRECISION_EXACT accordingly if you update PRECISION to ensure CircuitMath works as expected
+// The current precision is, `PRECISION = 8` digits
+// Do not forget to change the NUM_BITS, PRECISION_EXACT, and `SIGN` accordingly if you update PRECISION to ensure CircuitMath works as expected
 
 const
   E = 2.718281828459045235,
@@ -25,17 +26,15 @@ const
   NUM_BITS_EXACT = 256, // 1e36
   PI = 3.1415926535897932,
   POSITIVE_INFINITY = 1e18,
-  POSITIVE_INFINITY_LOG = 18,
   PRECISION = 1e8,
-  PRECISION_LOG = 8,
   PRECISION_EXACT = 1e18,
-  PRECISION_EXACT_LOG = 18
+  PRECISION_EXACT_LOG = 18,
+  SIGN = 1e19
 ;
 
 // CircuitNumber class with PRECISION_EXACT rounding to help with taylor series
 class CircuitNumberExact extends Struct({
-  _value: Field,
-  _sign: Field
+  _value: Field
 }) {
   static NUM_BITS = NUM_BITS_EXACT;
 
@@ -51,49 +50,35 @@ class CircuitNumberExact extends Struct({
       _sign.equals(Field(-1))
     ).assertEquals(Bool(true), 'CircuitNumberExact: Unknown sign is given to the number, must be either 1 or -1.');
 
-    super({
-      _value,
-      _sign
-    });
+    _value = _value.add(Provable.if(
+      _sign.equals(Field(1)).and(_value.equals(Field(0)).not()), // 0 is defined as positive
+      Field(SIGN),
+      Field(0)
+    ));
+
+    super({ _value });
 
     this._value = _value;
-    this._sign = _sign;
   };
+
+  // Utility Functions
+
+  sign(): Field {
+    return Provable.if(
+      this._value.greaterThan(Field(SIGN)),
+      Field(-1),
+      Field(1)
+    );
+  };
+
+  setSign(_sign: Field): CircuitNumberExact {
+    return new CircuitNumberExact(
+      this._value,
+      _sign
+    );
+  }
 
   // Private Utility Functions
-
-  private static fieldMod(_number1: Field, _number2: Field): Field {
-    if (_number1.isConstant() && _number2.isConstant()) {
-      const number1AsInteger = _number1.toBigInt();
-      const number2AsInteger = _number2.toBigInt();
-      const integerDivision = number1AsInteger / number2AsInteger;
-      const answer = number1AsInteger - number2AsInteger * integerDivision;
-      return new Field(
-        CircuitNumberExact.widenScientificNotation(
-          answer.toString()
-        )
-      );
-    } else {
-      const number1 = _number1.seal();
-      const number2 = _number2.seal();
-      const integerDivision = Provable.witness(
-        Field,
-        () => new Field(
-          CircuitNumberExact.widenScientificNotation(
-            (number1.toBigInt() / number2.toBigInt()).toString()
-          )
-        )
-      );
-      integerDivision.rangeCheckHelper(CircuitNumberExact.NUM_BITS).assertEquals(integerDivision);
-
-      const answer = number1.sub(number2.mul(integerDivision)).seal();
-
-      answer.rangeCheckHelper(CircuitNumberExact.NUM_BITS).assertEquals(answer);
-      answer.assertLessThan(_number2);
-
-      return answer;
-    }
-  };
 
   private static min(): CircuitNumberExact {
     return new CircuitNumberExact(
@@ -109,95 +94,39 @@ class CircuitNumberExact extends Struct({
     );
   };
 
-  private static precisionRound(number: number): string {
-    let numberAsString = number.toString();
-
-    if (numberAsString.includes('e'))
-      numberAsString = CircuitNumberExact.widenScientificNotation(numberAsString);
-
-    let numberValue = numberAsString.split('.')[0];
-
-    if (numberAsString.split('.').length < 2)
-      return numberValue;
-
-    let lastDigit = parseInt(numberAsString.split('.')[1][0]) + 1;
-
-    const numberValueAsArray = [...numberValue];
-    
-    for (let i = numberValue.length - 1; i >= 0 && lastDigit == 10; i--) {
-      lastDigit = parseInt(numberValueAsArray[i]) + 1;
-      numberValueAsArray[i] = (lastDigit % 10).toString();
-    }
-
-    numberValue = numberValueAsArray.join('');
-
-    if (lastDigit == 10)
-      numberValue = '1' + numberValue;
-
-    return numberValue;
-  };
-
-  private static roundString(_number: string, precision: number): string {
-    if (_number.length <= precision)
-      return _number;
-
-    let number = _number.split('');
-    let lastDigit = parseInt(number[precision]);
-
-    if (lastDigit < 5)
-      return number.join('').substring(0, precision);
-
-    number = number.filter((_, i) => i < precision);
-    let index = precision - 1;
-    
-    while (index > 0 && number[index] == '9') {
-      number[index] = '0';
-      index--;
-    }
-
-    if (index == 0) {
-      if (number[index] == '9') {
-        number[index] = '0';
-        return '1' + number.join('');
-      } else {
-        number[index] = (parseInt(number[index]) + 1).toString();
-        return number.join('');
-      }
-    } else {
-      number[index] = (parseInt(number[index]) + 1).toString();
-      return number.join('');
-    }
-  };
-
-  private static widenScientificNotation(number: string): string {
-    if (!number.includes('e'))
-      return number;
-
-    let answer;
-
-    if (number[number.indexOf('e') + 1] == '-') {
-      answer = '0.' + Array.from({ length: parseInt(number.substring(number.indexOf('e') + 2)) - 1 }, _ => '0').join('') + number.split('e')[0].replace('.', '');
-    } else if (number[number.indexOf('e') + 1] == '+') {
-      answer = number.split('e')[0].replace('.', '');
-
-      while (answer.length <= parseInt(number.substring(number.indexOf('e') + 2)))
-        answer = answer + '0';
-    } else {
-      answer = number.split('e')[0].replace('.', '');
-
-      while (answer.length <= parseInt(number.substring(number.indexOf('e') + 1)))
-        answer = answer + '0';
-    }
-
-    return answer;
-  };
-
   // Provable Interface Functions
+
+  check(): void {
+    if (this._value.isConstant())
+      this._value.rangeCheckHelper(CircuitNumberExact.NUM_BITS).assertEquals(this._value, 'CircuitNumberExact: Your number must fit in 64 bits.');
+    
+  };
+
+  fromFields(fields: Field []): CircuitNumberExact {
+    const value = fields[0].rangeCheckHelper(CircuitNumberExact.NUM_BITS);
+    const sign = Provable.if(
+      value.equals(fields[0]),
+      Field(1),
+      Field(-1)
+    );
+
+    return new CircuitNumberExact(
+      value,
+      sign
+    );
+  };
+
+  sizeInFields(): number {
+    return 1;
+  };
+
+  toAuxilary(): [] {
+    return [];
+  };
 
   toFields(): Field[] {
     return [
-      this._value,
-      this._sign
+      this._value
     ];
   };
 
@@ -206,7 +135,7 @@ class CircuitNumberExact extends Struct({
   static copysign(number: CircuitNumberExact, _sign: CircuitNumberExact): CircuitNumberExact {
     return new CircuitNumberExact(
       number._value,
-      _sign._sign
+      _sign.sign()
     );
   };
 
@@ -220,7 +149,7 @@ class CircuitNumberExact extends Struct({
       );
 
     const value = Math.trunc(number);
-    const decimal = (number - value) < 1 / PRECISION ? '0' : CircuitNumberExact.precisionRound((number - value) * PRECISION_EXACT);
+    const decimal = (number - value) < 1 / PRECISION ? '0' : precisionRound((number - value) * PRECISION_EXACT);
     const sign = number >= 0 ? 1 : -1;
 
     return new CircuitNumberExact(
@@ -228,9 +157,7 @@ class CircuitNumberExact extends Struct({
       .mul(
         Field(PRECISION_EXACT)
       ).add(
-        Field(
-          CircuitNumberExact.widenScientificNotation(decimal)
-        )
+        Field(widenScientificNotation(decimal))
       ),
       Field(sign)
     );
@@ -267,12 +194,12 @@ class CircuitNumberExact extends Struct({
 
     return new CircuitNumberExact(
       Field(
-        CircuitNumberExact.widenScientificNotation(value)
+        widenScientificNotation(value)
       ).mul(
         Field(PRECISION_EXACT)
       ).add(
         Field(
-          CircuitNumberExact.widenScientificNotation(decimal)
+          widenScientificNotation(decimal)
         )
       ),
       Field(sign)
@@ -282,43 +209,43 @@ class CircuitNumberExact extends Struct({
   static fromCircuitNumber(number: CircuitNumber): CircuitNumberExact {
     return new CircuitNumberExact(
       number._value.mul(Field(PRECISION_EXACT / PRECISION)),
-      number._sign
+      number.sign()
     );
   };
 
   // Type Conversion Functions
 
   toCircuitNumber(): CircuitNumber {
-    const integer = this._value.sub(CircuitNumberExact.fieldMod(this._value, Field(PRECISION_EXACT)));
+    const integer = this._value.sub(fieldMod(this._value, Field(PRECISION_EXACT), CircuitNumberExact.NUM_BITS));
     const decimal = this._value.sub(integer);
 
     const PRECISION_DIFFERENCE = PRECISION_EXACT / PRECISION;
 
     return CircuitNumber.fromField(
       integer.div(Field(PRECISION_EXACT)),
-      decimal.sub(CircuitNumberExact.fieldMod(decimal, Field(PRECISION_DIFFERENCE))).div(Field(PRECISION_DIFFERENCE)),
-      this._sign
+      decimal.sub(fieldMod(decimal, Field(PRECISION_DIFFERENCE), CircuitNumberExact.NUM_BITS)).div(Field(PRECISION_DIFFERENCE)),
+      this.sign()
     );
   };
 
   toField(): Field {
-    return this._sign.mul(this._value).div(Field(PRECISION_EXACT));
+    return this._value.div(Field(PRECISION_EXACT));
   };
 
   toNumber(): number {
     return (
-      this._sign.equals(Field(1)).toBoolean() ?
+      this.isPositive() ?
       Number(1) :
       Number(-1)
     ) * (Number(this._value.toBigInt()) / Number(PRECISION_EXACT));
   };
 
   toString(): string {
-    const integer = this._value.sub(CircuitNumberExact.fieldMod(this._value, Field(PRECISION_EXACT)));
+    const integer = this._value.sub(fieldMod(this._value, Field(PRECISION_EXACT), CircuitNumberExact.NUM_BITS));
     const decimal = this._value.sub(integer);
 
     return (
-      this._sign.equals(Field(1)).toBoolean() ?
+      this.isPositive() ?
       '' :
       '-'
     ) + integer.toBigInt().toString() + (decimal.toBigInt() > 0 ? '.' + decimal.toBigInt().toString() : '');
@@ -332,7 +259,15 @@ class CircuitNumberExact extends Struct({
   // Type Check Functions
 
   isConstant(): boolean {
-    return this._value.isConstant() && this._sign.isConstant()
+    return this._value.isConstant()
+  };
+
+  isPositive(): Bool {
+    return Provable.if(
+      this._value.greaterThan(Field(SIGN)),
+      Bool(false),
+      Bool(true)
+    );
   };
 
   // Arithmetic Conversion Functions
@@ -351,14 +286,14 @@ class CircuitNumberExact extends Struct({
   neg(): CircuitNumberExact {
     return new CircuitNumberExact(
       this._value,
-      this._sign.neg()
+      this.sign().neg()
     );
   };
 
   trunc(): CircuitNumberExact {
     return new CircuitNumberExact(
-      this._value.sub(CircuitNumberExact.fieldMod(this._value, Field(PRECISION_EXACT))),
-      this._sign
+      this._value.sub(fieldMod(this._value, Field(PRECISION_EXACT), CircuitNumberExact.NUM_BITS)),
+      this.sign()
     );
   };
 
@@ -375,15 +310,18 @@ class CircuitNumberExact extends Struct({
   greaterThan(other: CircuitNumberExact): Bool {
     const greaterThan = this._value.greaterThan(other._value);
 
+    const this_sign = this.sign();
+    const other_sign = other.sign();
+
     return Provable.if(
-      this._sign.equals(other._sign),
+      this_sign.equals(other_sign),
       Provable.if(
-        this._sign.equals(Field(1)),
+        this_sign.equals(Field(1)),
         greaterThan,
         greaterThan.not()
       ),
       Provable.if(
-        this._sign.equals(Field(1)),
+        this_sign.equals(Field(1)),
         Bool(true),
         Bool(false)
       )
@@ -400,15 +338,18 @@ class CircuitNumberExact extends Struct({
   lessThan(other: CircuitNumberExact): Bool {
     const lessThan = this._value.lessThan(other._value);
 
+    const this_sign = this.sign();
+    const other_sign = other.sign();
+
     return Provable.if(
-      this._sign.equals(other._sign),
+      this_sign.equals(other_sign),
       Provable.if(
-        this._sign.equals(Field(1)),
+        this_sign.equals(Field(1)),
         lessThan,
         lessThan.not()
       ),
       Provable.if(
-        this._sign.equals(Field(1)),
+        this_sign.equals(Field(1)),
         Bool(false),
         Bool(true)
       )
@@ -428,14 +369,16 @@ class CircuitNumberExact extends Struct({
     const number1 = this._value.seal();
     const number2 = other._value.seal();
 
+    const this_sign = this.sign();
+    const other_sign = other.sign();
+
     const answer = Provable.if(
-      this._sign.equals(other._sign),
-      CircuitNumberExact,
+      this_sign.equals(other_sign),
       (() => {
         const answerValue = number1.add(number2);
         return new CircuitNumberExact(
           answerValue,
-          this._sign
+          this_sign
         );
       })(),
       (() => {
@@ -452,8 +395,8 @@ class CircuitNumberExact extends Struct({
           Field(1),
           Provable.if(
             isGt,
-            this._sign,
-            other._sign
+            this_sign,
+            other_sign
           )
         );
         return new CircuitNumberExact(
@@ -463,7 +406,7 @@ class CircuitNumberExact extends Struct({
       })()
     );
 
-    return new CircuitNumberExact(answer._value, answer._sign);
+    return answer;
   };
 
   sub(other: CircuitNumberExact): CircuitNumberExact {
@@ -475,17 +418,20 @@ class CircuitNumberExact extends Struct({
     const otherValueSeal = other._value.seal();
     const valueMultiplication = thisValueSeal.mul(otherValueSeal);
 
+    const this_sign = this.sign();
+    const other_sign = other.sign();
+
     const answerValue = Provable.witness(
       Field,
       () => new Field(thisValueSeal.toBigInt() * otherValueSeal.toBigInt() / BigInt(PRECISION_EXACT))
     );
 
-    answerValue.assertEquals(valueMultiplication.sub(CircuitNumberExact.fieldMod(valueMultiplication, Field(PRECISION_EXACT))).div(Field(PRECISION_EXACT)));
+    answerValue.assertEquals(valueMultiplication.sub(fieldMod(valueMultiplication, Field(PRECISION_EXACT), CircuitNumberExact.NUM_BITS)).div(Field(PRECISION_EXACT)));
 
     const answer = new CircuitNumberExact(
       answerValue,
       Provable.if(
-        this._sign.equals(other._sign),
+        this_sign.equals(other_sign),
         Field(1),
         Field(-1)
       )
@@ -500,15 +446,18 @@ class CircuitNumberExact extends Struct({
     const thisValueSeal = this._value.seal();
     const otherValueSeal = other._value.seal();
 
+    const this_sign = this.sign();
+    const other_sign = other.sign();
+
     let answerValue = Provable.witness(
       Field,
-      () => new Field( CircuitNumberExact.widenScientificNotation((BigNumber.fromBigInt(thisValueSeal.toBigInt()).div(BigNumber.fromBigInt(otherValueSeal.toBigInt()))).toString()).split('.')[0] )
+      () => new Field( widenScientificNotation((BigNumber.fromBigInt(thisValueSeal.toBigInt()).div(BigNumber.fromBigInt(otherValueSeal.toBigInt()))).toString()).split('.')[0] )
     );
 
     const answerValueSeal = answerValue.seal();
     let answerDecimal = Provable.witness(
       Field,
-      () => new Field( CircuitNumberExact.roundString((BigNumber.fromBigInt(thisValueSeal.toBigInt()).div(BigNumber.fromBigInt(otherValueSeal.toBigInt())).sub(BigNumber.fromBigInt(answerValueSeal.toBigInt()))).mul(BigNumber.fromBigInt(BigInt(PRECISION_EXACT))).toInteger(), PRECISION_EXACT_LOG) )
+      () => new Field( roundString((BigNumber.fromBigInt(thisValueSeal.toBigInt()).div(BigNumber.fromBigInt(otherValueSeal.toBigInt())).sub(BigNumber.fromBigInt(answerValueSeal.toBigInt()))).mul(BigNumber.fromBigInt(BigInt(PRECISION_EXACT))).toInteger(), PRECISION_EXACT_LOG) )
     );
 
     const doesRecur = (answerDecimal).greaterThanOrEqual(Field(PRECISION_EXACT));
@@ -524,7 +473,7 @@ class CircuitNumberExact extends Struct({
       Field(0)
     ))
     const answerSign = Provable.if(
-      this._sign.equals(other._sign),
+      this_sign.equals(other_sign),
       Field(1),
       Field(-1)
     );
@@ -562,8 +511,7 @@ class CircuitNumberExact extends Struct({
 };
 
 export class CircuitNumber extends Struct({
-  _value: Field,
-  _sign: Field
+  _value: Field
 }) {
   static NUM_BITS = NUM_BITS;
 
@@ -580,56 +528,28 @@ export class CircuitNumber extends Struct({
       _sign.equals(Field(-1))
     ).assertEquals(Bool(true), 'CircuitNumber: Unknown sign is given to the number, must be either 1 or -1.');
 
-    super({
-      _value,
-      _sign
-    });
+    _value = _value.add(Provable.if(
+      _sign.equals(Field(1)).and(_value.equals(Field(0)).not()), // 0 is defined as positive
+      Field(SIGN),
+      Field(0)
+    ));
+
+    super({ _value });
 
     this._value = _value;
-    this._sign = _sign;
   };
 
-  // Private Utility Functions
+  // Utility Functions
 
-  private static fieldMod(_number1: Field, _number2: Field): Field {
-    if (_number1.isConstant() && _number2.isConstant()) {
-      const number1AsInteger = _number1.toBigInt();
-      const number2AsInteger = _number2.toBigInt();
-      const integerDivision = number1AsInteger / number2AsInteger;
-      const answer = number1AsInteger - number2AsInteger * integerDivision;
-      return new Field(
-        CircuitNumber.widenScientificNotation(
-          answer.toString()
-        )
-      );
-    } else {
-      const number1 = _number1.seal();
-      const number2 = _number2.seal();
-      const integerDivision = Provable.witness(
-        Field,
-        () => new Field(
-          CircuitNumber.widenScientificNotation(
-            (number1.toBigInt() / number2.toBigInt()).toString()
-          )
-        )
-      );
-      integerDivision.rangeCheckHelper(CircuitNumber.NUM_BITS).assertEquals(integerDivision);
-
-      const answer = number1.sub(number2.mul(integerDivision)).seal();
-
-      answer.rangeCheckHelper(CircuitNumber.NUM_BITS).assertEquals(answer);
-      answer.assertLessThan(_number2);
-
-      return answer;
-    }
-  };
-
-  private static min(): CircuitNumber {
-    return new CircuitNumber(
-      Field(1),
+  sign(): Field {
+    return Provable.if(
+      this._value.greaterThan(Field(SIGN)),
+      Field(-1),
       Field(1)
     );
   };
+
+  // Private Utility Functions
 
   private static precision(): CircuitNumber {
     return new CircuitNumber(
@@ -638,63 +558,11 @@ export class CircuitNumber extends Struct({
     );
   };
 
-  private static precisionRound(number: number): string {
-    let numberAsString = number.toString();
-
-    if (numberAsString.includes('e'))
-      numberAsString = CircuitNumber.widenScientificNotation(numberAsString);
-
-    let numberValue = numberAsString.split('.')[0];
-
-    if (numberAsString.split('.').length < 2)
-      return numberValue;
-
-    let lastDigit = parseInt(numberAsString.split('.')[1][0]) + 1;
-
-    const numberValueAsArray = [...numberValue];
-    
-    for (let i = numberValue.length - 1; i >= 0 && lastDigit == 10; i--) {
-      lastDigit = parseInt(numberValueAsArray[i]) + 1;
-      numberValueAsArray[i] = (lastDigit % 10).toString();
-    }
-
-    numberValue = numberValueAsArray.join('');
-
-    if (lastDigit == 10)
-      numberValue = '1' + numberValue;
-
-    return numberValue;
-  };
-
-  private static widenScientificNotation(number: string): string {
-    if (!number.includes('e'))
-      return number;
-
-    let answer;
-
-    if (number[number.indexOf('e') + 1] == '-') {
-      answer = '0.' + Array.from({ length: parseInt(number.substring(number.indexOf('e') + 2)) - 1 }, _ => '0').join('') + number.split('e')[0].replace('.', '');
-    } else if (number[number.indexOf('e') + 1] == '+') {
-      answer = number.split('e')[0].replace('.', '');
-
-      while (answer.length <= parseInt(number.substring(number.indexOf('e') + 2)))
-        answer = answer + '0';
-    } else {
-      answer = number.split('e')[0].replace('.', '');
-
-      while (answer.length <= parseInt(number.substring(number.indexOf('e') + 1)))
-        answer = answer + '0';
-    }
-
-    return answer;
-  };
-
   // Provable Interface Functions
 
   toFields(): Field[] {
     return [
-      this._value,
-      this._sign
+      this._value
     ];
   };
 
@@ -703,7 +571,7 @@ export class CircuitNumber extends Struct({
   static copysign(number: CircuitNumber, _sign: CircuitNumber): CircuitNumber {
     return new CircuitNumber(
       number._value,
-      _sign._sign
+      _sign.sign()
     );
   };
 
@@ -717,7 +585,7 @@ export class CircuitNumber extends Struct({
       );
 
     const value = Math.trunc(number);
-    const decimal = (number - value) < 1 / PRECISION ? '0' : CircuitNumber.precisionRound((number - value) * PRECISION);
+    const decimal = (number - value) < 1 / PRECISION ? '0' : precisionRound((number - value) * PRECISION);
     const sign = number >= 0 ? 1 : -1;
 
     return new CircuitNumber(
@@ -726,7 +594,7 @@ export class CircuitNumber extends Struct({
         Field(PRECISION)
       ).add(
         Field(
-          CircuitNumber.widenScientificNotation(decimal)
+          widenScientificNotation(decimal)
         )
       ),
       Field(sign)
@@ -747,16 +615,12 @@ export class CircuitNumber extends Struct({
   };
 
   toField(): Field {
-    return this._sign.mul(this._value).div(Field(PRECISION));
+    return this.sign().mul(this._value).div(Field(PRECISION));
   };
 
   toNumber(): Number {
-    const sign = this._sign; // A Field element
-    console.log(sign.isConstant()); // Prints false, as this is an argument
-    console.log(sign.toBigInt()); // Throws an error
-
     return (
-      this._sign.toBigInt() == 1n ?
+      this.sign().toBigInt() == 1n ?
       Number(1) :
       Number(-1)
     ) * (Number(this._value.toConstant().toBigInt()) / Number(PRECISION));
@@ -780,36 +644,40 @@ export class CircuitNumber extends Struct({
   };
   
   ceil(): CircuitNumber {
-    const integer = this._value.sub(CircuitNumber.fieldMod(this._value, Field(PRECISION)));
+    const integer = this._value.sub(fieldMod(this._value, Field(PRECISION), CircuitNumber.NUM_BITS));
     const decimal = this._value.sub(integer);
+
+    const this_sign = this.sign();
 
     return new CircuitNumber(
       integer.add(Provable.if(
         Bool.or(
-          this._sign.equals(Field(1)).not(),
+          this_sign.equals(Field(1)).not(),
           decimal.equals(Field(0))
         ),
         Field(0),
         Field(PRECISION)
       )),
-      this._sign
+      this_sign
     );
   };
 
   floor(): CircuitNumber {
-    const integer = this._value.sub(CircuitNumber.fieldMod(this._value, Field(PRECISION)));
+    const integer = this._value.sub(fieldMod(this._value, Field(PRECISION), CircuitNumber.NUM_BITS));
     const decimal = this._value.sub(integer);
+
+    const this_sign = this.sign();
 
     return new CircuitNumber(
       integer.add(Provable.if(
         Bool.and(
-          this._sign.equals(Field(-1)),
+          this_sign.equals(Field(-1)),
           decimal.equals(Field(0)).not()
         ),
         Field(PRECISION),
         Field(0)
       )),
-      this._sign
+      this_sign
     );
   };
 
@@ -820,12 +688,12 @@ export class CircuitNumber extends Struct({
   neg(): CircuitNumber {
     return new CircuitNumber(
       this._value,
-      this._sign.neg()
+      this.sign().neg()
     );
   };
 
   round(): CircuitNumber {
-    const integer = this._value.sub(CircuitNumber.fieldMod(this._value, Field(PRECISION)));
+    const integer = this._value.sub(fieldMod(this._value, Field(PRECISION), CircuitNumber.NUM_BITS));
     const decimal = this._value.sub(integer);
 
     return new CircuitNumber(
@@ -839,11 +707,11 @@ export class CircuitNumber extends Struct({
   };
 
   trunc(): CircuitNumber {
-    const integer = this._value.sub(CircuitNumber.fieldMod(this._value, Field(PRECISION)));
+    const integer = this._value.sub(fieldMod(this._value, Field(PRECISION), CircuitNumber.NUM_BITS));
 
     return new CircuitNumber(
       integer,
-      this._sign
+      this.sign()
     );
   };
 
@@ -870,20 +738,21 @@ export class CircuitNumber extends Struct({
   // Type Check Functions
 
   isConstant(): boolean {
-    return this._value.isConstant() && this._sign.isConstant()
+    return this._value.isConstant()
   };
 
   isInteger(): Bool {
-    const integer = this._value.sub(CircuitNumber.fieldMod(this._value, Field(PRECISION)));
+    const integer = this._value.sub(fieldMod(this._value, Field(PRECISION), CircuitNumber.NUM_BITS));
     const decimal = this._value.sub(integer);
 
     return decimal.equals(Field(0));
   };
 
   isPositive(): Bool {
-    return Bool.and(
-      this.equals(CircuitNumber.from(0)).not(),
-      this._sign.equals(Field(1))
+    return Provable.if(
+      this._value.greaterThan(Field(SIGN)),
+      Bool(false),
+      Bool(true)
     );
   };
 
@@ -900,15 +769,18 @@ export class CircuitNumber extends Struct({
   greaterThan(other: CircuitNumber): Bool {
     const greaterThan = this._value.greaterThan(other._value);
 
+    const this_sign = this.sign();
+    const other_sign = other.sign();
+
     return Provable.if(
-      this._sign.equals(other._sign),
+      this_sign.equals(other_sign),
       Provable.if(
-        this._sign.equals(Field(1)),
+        this_sign.equals(Field(1)),
         greaterThan,
         greaterThan.not()
       ),
       Provable.if(
-        this._sign.equals(Field(1)),
+        this_sign.equals(Field(1)),
         Bool(true),
         Bool(false)
       )
@@ -925,15 +797,18 @@ export class CircuitNumber extends Struct({
   lessThan(other: CircuitNumber): Bool {
     const lessThan = this._value.lessThan(other._value);
 
+    const this_sign = this.sign();
+    const other_sign = other.sign();
+
     return Provable.if(
-      this._sign.equals(other._sign),
+      this_sign.equals(other_sign),
       Provable.if(
-        this._sign.equals(Field(1)),
+        this_sign.equals(Field(1)),
         lessThan,
         lessThan.not()
       ),
       Provable.if(
-        this._sign.equals(Field(1)),
+        this_sign.equals(Field(1)),
         Bool(false),
         Bool(true)
       )
@@ -953,14 +828,16 @@ export class CircuitNumber extends Struct({
     const number1 = this._value.seal();
     const number2 = other._value.seal();
 
+    const this_sign = this.sign();
+    const other_sign = other.sign();
+
     const answer = Provable.if(
-      this._sign.equals(other._sign),
-      CircuitNumber,
+      this_sign.equals(other_sign),
       (() => {
         const answerValue = number1.add(number2);
         return new CircuitNumber(
           answerValue,
-          this._sign
+          this_sign
         );
       })(),
       (() => {
@@ -977,8 +854,8 @@ export class CircuitNumber extends Struct({
           Field(1),
           Provable.if(
             isGt,
-            this._sign,
-            other._sign
+            this_sign,
+            other_sign
           )
         );
         return new CircuitNumber(
@@ -988,13 +865,10 @@ export class CircuitNumber extends Struct({
       })()
     );
 
-    return new CircuitNumber(answer._value, answer._sign);
+    return answer;
   };
 
   sub(other: CircuitNumber): CircuitNumber {
-    console.log(this.toNumber());
-    console.log(other.neg().toNumber());
-    console.log(this.add(other.neg()).toNumber());
     return this.add(other.neg());
   };
 
@@ -1003,16 +877,19 @@ export class CircuitNumber extends Struct({
     const otherValueSeal = other._value.seal();
     const valueMultiplication = thisValueSeal.mul(otherValueSeal);
 
+    const this_sign = this.sign();
+    const other_sign = other.sign();
+
     const answerValue = Provable.witness(
       Field,
       () => new Field(thisValueSeal.toBigInt() * otherValueSeal.toBigInt() / BigInt(PRECISION))
     );
-    answerValue.assertEquals(valueMultiplication.sub(CircuitNumber.fieldMod(valueMultiplication, Field(PRECISION))).div(Field(PRECISION)));
+    answerValue.assertEquals(valueMultiplication.sub(fieldMod(valueMultiplication, Field(PRECISION), CircuitNumber.NUM_BITS)).div(Field(PRECISION)));
 
     const answer = new CircuitNumber(
       answerValue,
       Provable.if(
-        this._sign.equals(other._sign),
+        this_sign.equals(other_sign),
         Field(1),
         Field(-1)
       )
@@ -1052,87 +929,6 @@ export class CircuitConstant {
 
 export class CircuitMath {
   // Private Utility Functions
-
-  private static precisionRound(number: number): string {
-    let numberAsString = number.toString();
-
-    if (numberAsString.includes('e'))
-      numberAsString = CircuitMath.widenScientificNotation(numberAsString);
-
-    let numberValue = numberAsString.split('.')[0];
-
-    if (numberAsString.split('.').length < 2)
-      return numberValue;
-
-    let lastDigit = parseInt(numberAsString.split('.')[1][0]) + 1;
-
-    const numberValueAsArray = [...numberValue];
-    
-    for (let i = numberValue.length - 1; i >= 0 && lastDigit == 10; i--) {
-      lastDigit = parseInt(numberValueAsArray[i]) + 1;
-      numberValueAsArray[i] = (lastDigit % 10).toString();
-    }
-
-    numberValue = numberValueAsArray.join('');
-
-    if (lastDigit == 10)
-      numberValue = '1' + numberValue;
-
-    return numberValue;
-  };
-
-  private static widenScientificNotation(number: string): string {
-    if (!number.includes('e'))
-      return number;
-
-    let answer;
-
-    if (number[number.indexOf('e') + 1] == '-') {
-      answer = '0.' + Array.from({ length: parseInt(number.substring(number.indexOf('e') + 2)) - 1 }, _ => '0').join('') + number.split('e')[0].replace('.', '');
-    } else if (number[number.indexOf('e') + 1] == '+') {
-      answer = number.split('e')[0].replace('.', '');
-
-      while (answer.length <= parseInt(number.substring(number.indexOf('e') + 2)))
-        answer = answer + '0';
-    } else {
-      answer = number.split('e')[0].replace('.', '');
-
-      while (answer.length <= parseInt(number.substring(number.indexOf('e') + 1)))
-        answer = answer + '0';
-    }
-
-    return answer;
-  };
-
-  private static fieldMod(_number1: Field, _number2: Field): Field {
-    if (_number1.isConstant() && _number2.isConstant()) {
-      const number1AsInteger = _number1.toBigInt();
-      const number2AsInteger = _number2.toBigInt();
-      const integerDivision = number1AsInteger / number2AsInteger;
-      const answer = number1AsInteger - number2AsInteger * integerDivision;
-      return new Field(
-        CircuitMath.widenScientificNotation(
-          answer.toString()
-        )
-      );
-    } else {
-      const number1 = _number1.seal();
-      const number2 = _number2.seal();
-      const integerDivision = Provable.witness(
-        Field,
-        () => new Field(
-          CircuitMath.widenScientificNotation(
-            (number1.toBigInt() / number2.toBigInt()).toString()
-          )
-        )
-      );
-
-      const answer = number1.sub(number2.mul(integerDivision)).seal();
-      answer.assertLessThan(_number2);
-
-      return answer;
-    }
-  };
 
   private static intPow(base: CircuitNumberExact, power: CircuitNumberExact): CircuitNumberExact {
     const OPERATION_COUNT = 64;
@@ -1178,7 +974,7 @@ export class CircuitMath {
         );
     
         const power = CircuitMath.intPow(CircuitNumberExact.from(2), answer).toField();
-        const mod = CircuitMath.fieldMod(number, power);
+        const mod = fieldMod(number, power, CircuitNumberExact.NUM_BITS);
         const check = number.sub(mod).div(power);
     
         Provable.if(
@@ -1306,7 +1102,7 @@ export class CircuitMath {
     console.log(CircuitMath.lnExact(base).toNumber());
     const _answer = CircuitMath.intPow(base, intPow).mul(CircuitMath.expExact(power.abs().sub(intPow).mul(CircuitMath.lnExact(base))));
     
-    return Provable.if(power._sign.equals(Field(-1)), _answer.inv(), _answer);
+    return Provable.if(power.isPositive(), _answer, _answer.inv());
   };
 
   static pow(_base: CircuitNumber, power: CircuitNumber): CircuitNumber {
@@ -1395,7 +1191,7 @@ export class CircuitMath {
       factorial = factorial.mul(CircuitNumberExact.from(i + 2));
     }
 
-    answer._sign = _sign;
+    answer = answer.setSign(_sign);
 
     return answer;
   };
@@ -1446,7 +1242,7 @@ export class CircuitMath {
       factorial = factorial.mul(CircuitNumberExact.from(i + 2));
     }
 
-    answer._sign = _sign;
+    answer = answer.setSign(_sign);
 
     return answer;
   };
@@ -1580,13 +1376,13 @@ export class CircuitMath {
 
   private static arcsinhExact(number: CircuitNumberExact): CircuitNumberExact {
     const value = number._value.seal();
-    const sign = number._sign.seal();
+    const sign = number.sign().seal();
 
     const answerValue = Provable.witness(
       Field,
       () => {
         const number = (sign.toBigInt() == 1n ? 1 : -1) * Number(value.toBigInt()) / PRECISION;
-        return Field(CircuitMath.precisionRound(Math.abs(Math.asinh(number)) * PRECISION_EXACT));
+        return Field(precisionRound(Math.abs(Math.asinh(number)) * PRECISION_EXACT));
       }
     );
 

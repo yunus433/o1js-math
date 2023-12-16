@@ -13,7 +13,7 @@ import {
 import {
   CircuitMath,
   CircuitNumber
-} from './snarkyjs-math.js';
+} from './o1js-math.js';
 
 export class Test extends SmartContract {
   @state(CircuitNumber) number = State<CircuitNumber>();

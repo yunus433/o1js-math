@@ -1,6 +1,6 @@
 import { Test } from './Test';
 import { Bool, Mina, PrivateKey, PublicKey, AccountUpdate } from 'snarkyjs';
-import { CircuitNumber } from './snarkyjs-math';
+import { CircuitNumber } from './o1js-math';
 
 let proofsEnabled = false;
 
